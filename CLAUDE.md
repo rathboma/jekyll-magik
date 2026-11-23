@@ -162,7 +162,9 @@ Mirror:
 Intended differences, documented in the README:
 - convert non-sRGB profiles to sRGB before stripping (only when the profile
   isn't already sRGB)
-- autorotate by EXIF
+- autorotate by EXIF, JPEGs only: FastImage (which sizes every URL) turns
+  only JPEG sizes upright, so a PNG or WebP with an EXIF orientation keeps
+  its stored one, as ImageMagick leaves it
 - `jpeg_quality` (82) instead of reusing the source's quality
 - flatten alpha onto white for JPEG
 - no `integrity` on derivatives by default
@@ -275,26 +277,36 @@ checks.
   object with the same bytes named `.jpg`. Equal content under two logical
   paths shares one Derivative (one object) and gets two References (URLs)
 - `Pipeline` is the plain version: `thumbnail` with `size: :force` to the
-  predicted size (so prediction and output agree by construction), `crop`,
-  flatten alpha for JPEG, encode (JPEG Q + `optimize_coding`, WebP Q +
-  `effort: 4`, PNG `compression: 6`), metadata stripped. No colour
-  conversion or palette PNGs yet: #3 adds them and bumps `PIPELINE_VERSION`.
-  The parent checks every reply's size against the prediction and deletes
-  an object of the wrong size
+  predicted size, `crop`, flatten alpha for JPEG, encode (JPEG Q +
+  `optimize_coding`, WebP Q + `effort: 4`, PNG `compression: 6`), metadata
+  stripped. No colour conversion or palette PNGs yet: #3 adds them and bumps
+  `PIPELINE_VERSION`. Because `size: :force` would squash any image into the
+  predicted box, the worker first checks that libvips reads the source at
+  the size the parent predicted from (`source_width`/`source_height`, after
+  rotation, which is JPEG-only: `autorotate`), and the parent checks every
+  reply's size and deletes an object of the wrong size. Loading `pipeline.rb`
+  turns off libvips' operation cache (`Vips.cache_set_max(0)`), in workers
+  and with `workers: 0`: it caches loads by file name, so a file changed
+  during `jekyll serve` would come back with its old pixels
 - `Processor` is one process-wide worker (`Processor.shared`), started on
   the first miss and stopped `at_exit`; jobs carry absolute paths, so sites
   can share it. The worker keeps its real stdout for the protocol and points
-  `$stdout` at stderr, and sets `Vips.cache_set_max(0)` so a file changed
-  during `jekyll serve` is never served from libvips' cache. Jobs carry the
-  source's size and mtime from when it was digested, and the worker refuses
-  a file that changed
+  `$stdout` at stderr. Jobs carry the source's size and mtime from when it was
+  digested, and the worker refuses a file that changed. A worker found dead
+  before a job, or that fails a job it didn't just start for, is replaced and
+  the job retried once; one that can't start (no libvips) fails every later
+  job with the same error, without spawning again
 - `Store`: three JSON files beside `objects/` (`index.json`, `sources.json`,
   `pages.json`), each merged on save under an `flock` on `v1/lock`, written
-  with temp + rename and sorted keys. A hit needs the entry's size, ext and
-  dimensions to match the object; an object without an entry is a hit if
-  FastImage reads the expected size from it. GC also deletes index entries
-  without objects and `.tmp-*` files over an hour old. Full builds prune this
-  site's memo entries and pages that the build didn't see
+  with temp + rename and sorted keys. Only index entries this process
+  checked against their objects override disk's. A hit needs the entry's
+  size, ext and dimensions to match the object; an object without an entry
+  is a hit if FastImage reads the expected size from it and it ends as its
+  format must (PNG `IEND`, JPEG `EOI`, the WebP RIFF length), since a cut
+  file keeps its header. GC also deletes index entries without objects and
+  `.tmp-*` files over an hour old; a worker whose object directory GC just
+  removed makes it again. Full builds prune this site's memo entries and
+  pages that the build didn't see, and anyone's whose file is gone
 - The page map (`Api#after_render`, at `:site, :post_render`): every page
   rendered this build records its assets (`["o", logical, path]` or `["d",
   path, logical, canonical]`, even when empty); in an incremental build, every
@@ -306,6 +318,10 @@ checks.
   build on the fixture itself use a temp `cache_dir` and
   `disable_disk_cache`. `test/fixtures/site/resized.html` has the four kinds
   of transform beekeeper uses, and a PNG
+- Tests never load libvips into the test process (the suite fails if one
+  does): it brings the system's libxml2, and Nokogiri's golden test then
+  skips or misbehaves depending on test order. Use `ruby_subprocess` (a
+  `workers: 0` build) and `pixels` (reading an image) from `test_helper.rb`
 
 ## Review every piece of work
 
