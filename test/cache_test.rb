@@ -308,11 +308,49 @@ class CacheTest < Minitest::Test
     File.binwrite(object, good.byteslice(0, good.bytesize - 20))
     write_index(dir, index(dir).except(derivative_parts(url)[2]))
     File.unlink(File.join(dir, "_site", url))
+    stale = File.join(dir, "_site/assets/img/stale-#{"a" * 10}-#{"b" * 64}.png")
+    File.write(stale, "x")
 
     site = rebuild(dir, "incremental" => true)
     assert_equal 1, counts(site)[:processed]
     assert_equal good, File.binread(object)
     assert_equal good, File.binread(File.join(dir, "_site", url))
+    refute File.exist?(stale), "the page map wasn't complete after remaking the image"
+  end
+
+  # An EXIF orientation outside 1-8 isn't one: libvips and browsers show
+  # the image as stored, whatever FastImage makes of it.
+  def test_an_orientation_that_isnt_one_is_ignored
+    jpg = File.binread(File.expand_path("fixtures/orientation/rotated.jpg", __dir__))
+    # The orientation entry: tag 0x0112, type SHORT, count 1, value 6, in
+    # either byte order. Its value becomes 9.
+    big = ["011200030000000100060000"].pack("H*")
+    little = ["120103000100000006000000"].pack("H*")
+    entry = jpg.index(big) || jpg.index(little)
+    refute_nil entry, "no orientation entry in the fixture"
+    jpg = jpg.dup
+    jpg[entry + 8, 2] = jpg.index(big) ? "\x00\x09".b : "\x09\x00".b
+    site = site_for(fixture_copy("_assets/img/o9.jpg" => jpg))
+    site.reset
+    assert_equal [40, 30], site.magik.lookup("o9.jpg").dimensions
+    url = render(%({% asset o9.jpg magick:resize='20x' @path %}), site: site)
+    assert_equal [20, 15], FastImage.size(File.join(site.magik.store.objects_dir, derivative_parts(url)[2][0, 2],
+                                                    "#{derivative_parts(url)[2]}.jpg"))
+  end
+
+  # The rotation applied is part of the content key: if FastImage started
+  # turning another type upright, its images would get new URLs.
+  def test_the_rotation_is_part_of_the_content_key
+    jpg = File.binread(File.expand_path("fixtures/orientation/rotated.jpg", __dir__))
+    site = site_for(fixture_copy("_assets/img/r.jpg" => jpg))
+    site.reset
+    source = site.magik.lookup("r.jpg")
+    transform = Jekyll::Magik::Transform.parse(resize: "20x")
+    upright = site.magik.registry.path_for(source, transform)
+    source.instance_variable_set(:@header, [40, 30, 1])
+    site.magik.reset!
+    refute_equal derivative_parts("/assets/#{upright}")[2],
+                 derivative_parts("/assets/#{site.magik.registry.path_for(source, transform)}")[2]
   end
 
   def test_a_malformed_page_map_falls_back_to_keeping_every_file

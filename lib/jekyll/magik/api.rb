@@ -20,6 +20,8 @@ module Jekyll
     # page used which asset (persisted, so that an incremental build keeps
     # the assets of the pages it skips).
     class Api
+      include PageMap
+
       # The shape of a digested asset path that beekeeper-studio/web's
       # translation Worker and IndexNow recognise (DIGESTED in
       # workers/translate/src/assets.ts): ASCII word characters, `.`, `/` and
@@ -28,10 +30,6 @@ module Jekyll
       # The names jekyll-magik writes: digested originals, derivatives, and
       # names sprockets considers digested already.
       OUTPUT_NAME = /-(?:\h{128}\.[^.\/]+|\h{#{Registry::TKEY_LENGTH}}-\h{64}\.[^.\/]+|[0-9a-zA-Z]{7,128}\.digested)/
-      DERIVATIVE_PATH = /-(\h{64})\.([a-z0-9]+)\z/
-
-      # A derivative an incremental build kept for a page it didn't render.
-      Restored = Struct.new(:path, :url, :logical_path, :canonical, :dkey, :ext, keyword_init: true)
 
       attr_reader :site, :config
       attr_writer :processor
@@ -265,80 +263,6 @@ module Jekyll
         key = page_key(page)
         (@page_assets[key] ||= Set.new.compare_by_identity) << item if key
         key
-      end
-
-      # What the page map stores for a page's assets:
-      #   ["o", logical path, path]                       an original
-      #   ["d", path, logical path, canonical transform]  a derivative
-      # where path is relative to the asset destination.
-      def page_entries(items)
-        return [] unless items
-
-        items.map do |item|
-          if item.is_a?(Source)
-            ["o", item.logical_path, item.digest_path]
-          else
-            ["d", item.path, item.logical_path, item.transform.canonical]
-          end
-        end.sort
-      end
-
-      # Uses again the assets a page used when it was last rendered.
-      def restore(key)
-        entries = store.page_assets(key)
-        return @page_map_incomplete = true unless entries.is_a?(Array)
-
-        entries.each do |entry|
-          restored = case entry
-                     in ["o", String => logical_path, String => path]
-                       restore_original(logical_path, path)
-                     in ["d", String => path, String => logical_path, String => canonical]
-                       restore_derivative(path, logical_path, canonical)
-                     else false
-                     end
-          @page_map_incomplete = true unless restored
-        end
-      end
-
-      def restore_original(logical_path, path)
-        source = lookup(logical_path)
-        return false unless source && source.digest_path == path
-
-        use(source)
-        true
-      rescue Error
-        false
-      end
-
-      def restore_derivative(path, logical_path, canonical)
-        match = DERIVATIVE_PATH.match(path)
-        return false unless match
-
-        dkey, ext = match.captures
-        return rederive(path, logical_path, canonical) unless store.intact?(dkey, ext)
-
-        object = store.object_path(dkey, ext)
-        store.use(dkey)
-        dest_path = config.dest_path_for(path)
-        return true if @used.key?(dest_path)
-
-        @used[dest_path] = Restored.new(path: path, url: config.url_for(path), logical_path: logical_path,
-                                        canonical: canonical, dkey: dkey, ext: ext)
-        site.static_files << DerivativeFile.new(site, dest_path, object) if @write_files
-        true
-      end
-
-      # A restored derivative whose object is missing or damaged, made again
-      # from its source and transform. True if that gives the URL the
-      # skipped page has: its source hasn't changed.
-      def rederive(path, logical_path, canonical)
-        source = lookup(logical_path)
-        transform = Transform.from_h(JSON.parse(canonical))
-        return false unless source && transform
-
-        derive(source, transform).path == path
-      rescue Error, JSON::ParserError
-        false
       end
 
       def summary(gc_result)

@@ -103,6 +103,11 @@ module Jekyll
         ref
       end
 
+      # The Reference's path, without making sure the image is in the Store.
+      def path_for(source, transform)
+        (@references[[source, transform]] ||= build(source, transform)).path
+      end
+
       def references
         @references.values
       end
@@ -120,7 +125,7 @@ module Jekyll
 
       def build(source, transform)
         ext = transform.output_format(source)
-        quality, settings = output_settings(transform, ext)
+        quality, settings = output_settings(transform, ext, source)
         width, height = transform.output_size(*source.dimensions)
         dkey = self.class.dkey(source.digest, transform, settings)
         derivative = @derivatives[dkey] ||= Derivative.new(
@@ -135,10 +140,14 @@ module Jekyll
       end
 
       # The quality the output is encoded with, and the settings that go into
-      # dkey: the output format, and the config value used when the
-      # transform gives no quality.
-      def output_settings(transform, ext)
+      # dkey: the output format, the config value used when the transform
+      # gives no quality, and the EXIF rotation applied. Rotation follows
+      # FastImage's reading of the file, which a FastImage release could
+      # change (it doesn't read WebP orientation yet): the URL must change
+      # with it.
+      def output_settings(transform, ext, source)
         settings = { "format" => ext }
+        settings["orientation"] = source.orientation if source.orientation > 1
         default = case ext
                   when "jpg" then ["jpeg_quality", config.jpeg_quality]
                   when "webp" then ["webp_quality", config.webp_quality]

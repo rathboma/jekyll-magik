@@ -131,6 +131,12 @@ module Jekyll
         image = FastImage.new(filename, raise_on_failure: true)
         width, height = image.size
         orientation = image.orientation || 1
+        unless (1..8).cover?(orientation)
+          # Not an orientation: libvips and browsers show the image as
+          # stored, but FastImage swaps the size of anything from 5 up.
+          width, height = height, width if orientation >= 5
+          orientation = 1
+        end
         memo&.remember_source(filename, stat, "width" => width, "height" => height,
                                               "orientation" => orientation, "type" => image.type.to_s)
         [width, height, orientation].freeze

@@ -116,8 +116,8 @@ Components (names from the issues; `lib/jekyll/magik/`):
 4. **Derivative URLs come from inputs, never from output bytes.**
    - `tkey = sha256(logical path ‖ canonical transform)[0,10]`, the stable stem
    - `dkey = sha256(source sha512 ‖ canonical transform ‖ output settings ‖ PIPELINE_VERSION)`, the 64-hex digest
-   - output settings: the output format, and the `jpeg_quality`/`webp_quality`
-     a transform actually falls back on
+   - output settings: the output format, the `jpeg_quality`/`webp_quality`
+     a transform actually falls back on, and the EXIF orientation applied
    - never part of either key: HTML attributes, argument order, page, build time, libvips version
 
    **Bump `PIPELINE_VERSION`** when the output of an existing transform should
@@ -275,8 +275,15 @@ checks.
 - `Registry.dkey` hashes `[PIPELINE_VERSION, sha512, canonical, settings]` as
   JSON. The settings include the output format, which comes from the source's
   extension when `format` isn't given, so a JPEG named `.png` can't share an
-  object with the same bytes named `.jpg`. Equal content under two logical
-  paths shares one Derivative (one object) and gets two References (URLs)
+  object with the same bytes named `.jpg`; and the EXIF orientation applied
+  (when it's more than 1), which comes from FastImage's reading of the file,
+  so a FastImage release that turned other types upright would rename their
+  derivatives rather than change the pixels behind their URLs. Equal content
+  under two logical paths shares one Derivative (one object) and gets two
+  References (URLs)
+- An EXIF orientation outside 1 to 8 counts as 1 (`Source#read_header`):
+  libvips and browsers ignore it, but FastImage swaps the size of anything
+  from 5 up
 - `Pipeline` is the plain version: `thumbnail` with `size: :force` to the
   predicted size, `crop`, flatten alpha for JPEG, encode (JPEG Q +
   `optimize_coding`, WebP Q + `effort: 4`, PNG `compression: 6`), metadata
@@ -310,14 +317,17 @@ checks.
   `.tmp-*` files over an hour old; a worker whose object directory GC just
   removed makes it again. Full builds prune this site's memo entries and
   pages that the build didn't see, and anyone's whose file is gone
-- The page map (`Api#after_render`, at `:site, :post_render`): every page
+- The page map (`Api#after_render`, at `:site, :post_render`, and
+  `page_map.rb`): every page
   rendered this build records its assets (`["o", logical, path]` or `["d",
   path, logical, canonical]`, even when empty); in an incremental build, every
   page the regenerator skipped gets its recorded assets used again. A
   recorded object that is missing or damaged (`Store#intact?`) is made again
-  from its logical path and transform (`Transform.from_h`). If a skipped page
-  has no record, a record is malformed, or making it again gives another URL
-  (the source changed), the build falls back to #1's keep-everything rule
+  from its logical path and transform (`Transform.from_h`), if its URL would
+  be the same (`Registry#path_for`, without processing); failing to make it
+  fails the build, as in a tag. If a skipped page has no record, a record is
+  malformed, or the URL would be another (the source changed), the build
+  falls back to #1's keep-everything rule
   (`keep_on_incremental?`). Pages are keyed by their absolute source path,
   the way the regenerator keys them
 - Tests never write into `test/fixtures/site`: `fixture_site` and tests that
