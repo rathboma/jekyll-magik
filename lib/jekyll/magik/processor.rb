@@ -33,6 +33,13 @@ module Jekyll
       end
 
       def self.vips_missing(detail)
+        if detail.to_s.include?("cannot load such file -- vips")
+          return "resizing images needs the ruby-vips gem, which the image worker couldn't load " \
+                 "(#{detail}). " \
+                 "It's a dependency of jekyll-magik: install jekyll-magik with Bundler " \
+                 "(`gem \"jekyll-magik\"` in your Gemfile), so that it's in your bundle"
+        end
+
         "resizing images needs libvips #{MIN_VIPS} or newer, which jekyll-magik couldn't load (#{detail}). " \
           "Install it: `sudo apt-get install --no-install-recommends libvips42t64` on Ubuntu 24.04 " \
           "(`libvips42` on older Ubuntu and Debian), `brew install vips` on macOS, `apk add vips` on Alpine"
@@ -46,6 +53,10 @@ module Jekyll
       end
 
       def run(job)
+        # A worker that couldn't start won't start for the next job either:
+        # say so once per process, not with a new process per image.
+        raise @failed_start if @failed_start
+
         start unless @pid
         line = begin
           @input.puts(JSON.generate(job))
@@ -87,7 +98,8 @@ module Jekyll
         hello &&= parse(hello)
         unless hello && hello["ready"]
           stop
-          raise Error, self.class.vips_missing(hello ? hello["error"] : "the worker exited")
+          detail = hello ? hello["error"] : "the worker exited"
+          raise @failed_start = Error.new(self.class.vips_missing(detail))
         end
         check_version!(hello["vips"])
         seconds = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
@@ -101,7 +113,7 @@ module Jekyll
         return if Gem::Version.new(version.to_s[/\A[\d.]+/] || "0") >= Gem::Version.new(MIN_VIPS)
 
         stop
-        raise Error, self.class.vips_missing("found libvips #{version}")
+        raise @failed_start = Error.new(self.class.vips_missing("found libvips #{version}"))
       end
 
       def parse(line)

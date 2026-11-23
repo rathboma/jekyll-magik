@@ -51,6 +51,15 @@ class WorkerTest < Minitest::Test
     assert_includes error.message, "(cannot load vips.so.42)"
     assert_includes error.message, "libvips42t64"
     assert_nil processor.pid
+    again = assert_raises(Jekyll::Magik::Error) { processor.run("id" => "y") }
+    assert_same error, again
+  end
+
+  def test_a_worker_without_the_ruby_vips_gem_says_so
+    processor = fake_worker(%(puts JSON.generate("ready" => false, "error" => "cannot load such file -- vips"); exit 1))
+    error = assert_raises(Jekyll::Magik::Error) { processor.run("id" => "x") }
+    assert_includes error.message, "resizing images needs the ruby-vips gem"
+    assert_includes error.message, "`gem \"jekyll-magik\"` in your Gemfile"
   end
 
   def test_a_libvips_that_is_too_old_fails
