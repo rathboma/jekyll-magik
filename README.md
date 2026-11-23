@@ -213,7 +213,7 @@ magik:                       # everything below is optional; these are the defau
   jpeg_quality: 82           # for JPEG output without magick:quality
   webp_quality: 75           # for WebP output without magick:quality
   derivative_integrity: false
-  manifest: false            # write magik-manifest.json listing every asset URL
+  manifest: false            # write magik-manifest.json listing every asset URL (arrives with #2)
   gc:
     max_age_days: 14         # drop cached images unused for this long (false: never)
 ```

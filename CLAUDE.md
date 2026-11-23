@@ -233,6 +233,20 @@ checks.
   characters); the golden file comes from beekeeper's Nokogiri
 - `Svg` edits the root start tag in the file's own text instead of an XML
   round trip, so the rest of the markup is kept byte for byte
+- The sprockets corners the Resolver and Source copy: a directory's `index`
+  file found by the directory's name gets the directory's name (`only` →
+  `img/only.png`, sprockets' index alias), and names sprockets takes as
+  digested already (`-1a2b3c4.digested`) get no digest
+- Assets are marked used per build, by the tags that render. An incremental
+  build skips unchanged pages, so `CleanerMethods` (in `magik.rb`) stops
+  Jekyll's cleaner from deleting jekyll-magik's files in incremental builds,
+  as jekyll-assets kept its manifest's files. #2's persisted page → assets
+  map should replace this with the exact set
+- `AssetFile` treats a destination hardlinked to its source as stale, which
+  is right for originals. #4's cache objects are meant to be hardlinked and
+  skipped when the inode matches, so it needs a policy per kind of asset
+- A tag checks its mode against the asset's type before marking it used, so
+  a tag that raises writes nothing (and, with #4, starts no job)
 
 ## Review every piece of work
 
