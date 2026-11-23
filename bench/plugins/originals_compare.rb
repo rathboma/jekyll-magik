@@ -89,12 +89,27 @@ module MagikCompare
         return count("tags: @inline (jekyll-magik's own markup)")
       end
 
+      compare_markup(plan, ours, theirs, example)
+    end
+
+    def compare_markup(plan, ours, theirs, example)
       if ours == theirs
         count("tags: identical (#{plan.mode})")
         ours.scan(%r{/assets/[^"'\s]+}).each { |url| check_url(url, example) }
+      elsif attributes(ours) == attributes(theirs)
+        # jekyll-assets adds src, integrity and crossorigin in the order Ruby
+        # lists its methods, which changes with what else is loaded (see
+        # beekeeper's _plugins/stable_proxy_keys.rb). beekeeper's translation
+        # Worker sorts attributes, so the order changes no segment key.
+        count("tags: identical apart from jekyll-assets' attribute order (#{plan.mode})")
       else
         count("tags: DIFFERENT", example.merge("jekyll-magik" => ours))
       end
+    end
+
+    # An <img>'s attributes in name order.
+    def attributes(html)
+      html.scan(/\s([^\s=>]+)(?:=("[^"]*"|'[^']*'))?/).sort
     end
 
     # The derivative's markup now; its size after the write phase, when
@@ -114,6 +129,8 @@ module MagikCompare
                                                                                   "")
       if stripped == ours
         count("derivatives: <img> identical apart from src and integrity")
+      elsif attributes(stripped) == attributes(ours)
+        count("derivatives: <img> identical apart from src, integrity and jekyll-assets' attribute order")
       else
         count("derivatives: <img> DIFFERENT", example.merge("jekyll-magik" => ours))
       end
@@ -151,7 +168,8 @@ module MagikCompare
     def report_derivative_stats
       stats = @api.stats
       {
-        "unique (dkeys)" => stats[:derivatives], "references" => stats[:references],
+        "unique (dkeys)" => stats[:derivatives], "unique URLs" => @api.registry.references.size,
+        "references" => stats[:references],
         "cached" => stats[:cached], "processed" => stats[:processed],
         "seconds processing" => stats[:seconds].round(1),
         "seconds rendering tags, processing aside" => (@derive_seconds - stats[:seconds]).round(2)
