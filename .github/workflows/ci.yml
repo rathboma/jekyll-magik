@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Ruby ${{ matrix.ruby }}${{ matrix.jekyll && format(', Jekyll {0}', matrix.jekyll) || '' }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ["3.2", "3.3", "3.4"]
+        jekyll: [""]
+        include:
+          # beekeeper-studio/web builds with Jekyll 4.3.
+          - ruby: "3.4"
+            jekyll: "~> 4.3.0"
+    env:
+      JEKYLL_VERSION: ${{ matrix.jekyll }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Not used by the tests yet: the image pipeline (#3) needs it. Timed so
+      # we can see whether caching the packages is worth it.
+      - name: Install libvips
+        run: |
+          start=$(date +%s)
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends libvips42t64
+          echo "libvips $(dpkg-query -W -f='${Version}' libvips42t64) installed in $(( $(date +%s) - start ))s"
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Tests
+        run: bundle exec rake test
+
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - name: RuboCop
+        run: bundle exec rubocop

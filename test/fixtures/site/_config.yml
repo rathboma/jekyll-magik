@@ -1,0 +1,10 @@
+title: jekyll-magik fixture
+baseurl: ""
+plugins:
+  - jekyll-magik
+assets:
+  sources:
+    - _assets
+  defaults:
+    img:
+      integrity: true

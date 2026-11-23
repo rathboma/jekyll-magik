@@ -1,0 +1,22 @@
+---
+layout: default
+title: Home & "Welcome"
+hero: home/edit-schema
+image: og-only.png
+---
+<p id="jpg">{% asset photo.jpg alt="A photo" %}</p>
+<p id="png">{% asset logo.png alt="Logo" class="logo" height=42 %}</p>
+<p id="gif">{% asset anim.gif %}</p>
+<p id="webp">{% asset shot.webp title="Tom & Jerry's <show>" loading="lazy" %}</p>
+<p id="svg-img">{% asset hero.svg alt="" width="300" %}</p>
+<p id="extensionless">{% asset home/edit-schema %}</p>
+<p id="logical">{% asset img/home/edit-schema.png alt="By logical path" %}</p>
+<p id="nested">{% asset blog/default.jpg alt="{{ page.title | upcase }}" %}</p>
+<p id="liquid-name">{% asset {{page.hero}} @path %}</p>
+<p id="quoted-liquid-name">{% asset '{{ page.hero }}.svg' @path %}</p>
+<p id="mp4">{% asset videos/clip.mp4 @path %}</p>
+<p id="mp4-load-path">{% asset clip.mp4 @path %}</p>
+<p id="url-filter">{{ "logo.png" | asset_url }}</p>
+<p id="size-filter">{{ "photo.jpg" | asset_size | join: "x" }}</p>
+<div id="inline">{% asset hero.svg @inline class="hero" aria-label="Hero" %}</div>
+<div id="include">{% include figure.html asset="logo.png" description="From an include" %}</div>
