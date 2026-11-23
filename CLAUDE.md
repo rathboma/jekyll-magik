@@ -234,6 +234,15 @@ checks.
 - `Svg` edits the root start tag in the file's own text instead of an XML
   round trip, so the rest of the markup is kept byte for byte
 
+## Review every piece of work
+
+For every piece of work (each issue, each PR, each change of any size),
+spin up a review agent with no context to review it and find bugs in the
+architecture or the implementation. Start a fresh agent, not a fork of your
+own session, and give it the code and the spec (this file, the README, the
+issue), not your conclusions or what you think is wrong, so its read isn't
+anchored on yours. Check each finding yourself before fixing it.
+
 ## Conventions
 
 - Unix line endings, 2-space indentation, `# frozen_string_literal: true`
