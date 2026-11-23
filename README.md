@@ -5,14 +5,19 @@ the image side of [jekyll-assets](https://github.com/envygeeks/jekyll-assets).
 Your `{% asset %}` tags, including their `magick:` resize and crop arguments,
 keep working. The build stops spending minutes in ImageMagick.
 
-> **Status: in progress.** Part 1
-> ([#1](https://github.com/rathboma/jekyll-magik/issues/1)) works: the tag,
-> `@path`, `@inline`, the filters and the Ruby API for files used as they are,
-> with jekyll-assets' exact URLs and markup. Resizing (`magick:`, issues #2 to
-> #4) doesn't yet: those tags raise "not supported". The rest of this README
-> describes the whole design in issues #1 to
-> [#6](https://github.com/rathboma/jekyll-magik/issues/6), and changes as each
-> part lands. There's no release yet; install from git.
+> **Status: in progress.** Parts 1 and 2
+> ([#1](https://github.com/rathboma/jekyll-magik/issues/1),
+> [#2](https://github.com/rathboma/jekyll-magik/issues/2)) work: the tag,
+> `@path`, `@inline`, the filters and the Ruby API, with jekyll-assets' exact
+> URLs and markup for files used as they are, and `magick:` resizing with the
+> global cache and stable URLs described below. For now each new image is
+> resized by one worker process while its tag waits, with a plain libvips
+> pipeline: [#3](https://github.com/rathboma/jekyll-magik/issues/3) makes the
+> output match ImageMagick's (colour profiles, golden tests) and
+> [#4](https://github.com/rathboma/jekyll-magik/issues/4) runs a pool of
+> workers in the background. The rest of this README describes the whole
+> design in issues #1 to [#6](https://github.com/rathboma/jekyll-magik/issues/6),
+> and changes as each part lands. There's no release yet; install from git.
 
 ## Why
 
@@ -51,7 +56,8 @@ The benchmark table will be filled in from `bench/run` as the parts land
   per build and processed once per change to its source. A missing `_site`
   doesn't clear the cache.
 - **URLs before pixels.** A resized image's URL is computed from its inputs, so
-  the tag returns at once and the image is processed in the background.
+  the tag can return at once and the image be processed in the background
+  (#4; until then the tag waits for it).
 - **libvips in worker processes.** Images are resized by a pool of worker
   processes while Jekyll renders pages on the main thread. Threads don't work
   for this: the render thread holds Ruby's GVL and starves libvips threads of
@@ -151,20 +157,38 @@ The arguments are jekyll-assets' ImageMagick syntax, done by libvips.
 | `magick:format='webp'` or `'jpg'` | convert; the URL's extension follows |
 | `@magick:strip` | accepted. Metadata is always stripped |
 
+Sources can be PNG, JPEG or WebP. `resize` and `crop` run in the order given,
+as ImageMagick runs them; the order of the other arguments, quoting
+(`'600x'` or `600x`) and HTML attributes don't matter.
+
 A resized image's URL is
-`/assets/<dir>/<name>-<transform key>-<content key>.<ext>`. The transform key
-depends on the source's path and the arguments, so it is stable. The content
-key also covers the source's bytes, the quality settings it falls back on and
-`PIPELINE_VERSION`.
+
+```
+/assets/<dir>/<name>-<transform key>-<content key>.<ext>
+/assets/img/screenshots/main-dark-3f9c1a7e2b-<64 hex>.webp
+```
+
+- The **transform key** (10 hex) comes from the source's logical path and the
+  arguments, normalized. It doesn't change when the image does, and differs
+  for each width in a srcset.
+- The **content key** (64 hex) comes from the source's bytes, the arguments,
+  the output format, the quality setting the output falls back on
+  (`jpeg_quality` or `webp_quality`, when the tag gives no `quality`) and
+  `PIPELINE_VERSION`, a number bumped when jekyll-magik's output for the same
+  arguments should change. The libvips version isn't part of it, so upgrading
+  libvips renames nothing.
+
+Neither comes from the output's bytes, so a URL is known before the image
+is made, and the same arguments give the same URL on every machine.
 
 ### Differences from jekyll-assets and ImageMagick
 
 These are deliberate:
 
-- **Colour**: images with a non-sRGB colour profile (for example Display P3
-  screenshots from a Mac) are converted to sRGB before the profile is
-  stripped. ImageMagick's `-strip` drops the profile unconverted, which washes
-  the colours out.
+- **Colour** (arrives with #3): images with a non-sRGB colour profile (for
+  example Display P3 screenshots from a Mac) are converted to sRGB before the
+  profile is stripped. ImageMagick's `-strip` drops the profile unconverted,
+  which washes the colours out.
 - **Orientation**: JPEGs are rotated according to their EXIF orientation
   first.
 - **JPEG quality**: ImageMagick reuses the source's quality, so a q100 source
@@ -210,16 +234,28 @@ assets:                      # the jekyll-assets keys jekyll-magik reads
 magik:                       # everything below is optional; these are the defaults
   cache_dir: .jekyll-cache/magik
   workers: 3                 # resize processes; default: CPU count - 1, at least 1
+                             # (one for now, #4 makes it a pool); 0 resizes in Jekyll's own process
   jpeg_quality: 82           # for JPEG output without magick:quality
   webp_quality: 75           # for WebP output without magick:quality
   derivative_integrity: false
-  manifest: false            # write magik-manifest.json listing every asset URL (arrives with #2)
+  manifest: false            # write <destination>/magik-manifest.json, listing every asset URL
   gc:
     max_age_days: 14         # drop cached images unused for this long (false: never)
 ```
 
 Changing `jpeg_quality` or `webp_quality` re-renders only the images that use
 the default, under new URLs.
+
+`manifest: true` writes `_site/assets/magik-manifest.json`: every original's
+URL with its logical path, and every resized image's URL with its logical
+source path, normalized arguments and size. It's for comparing builds and
+making redirects, and is published with the site.
+
+Each build ends with a summary:
+
+```
+jekyll-magik: 591 derivatives (589 cached, 2 processed in 0.4s), 456 originals
+```
 
 ## Ruby API and filters
 
@@ -245,7 +281,37 @@ Looking an asset up with `find`, `find!`, `url` or `asset_url` also makes sure
 it's written to `_site`, even if no tag uses it. `asset_size` only reads the
 file's header.
 
-## Caching in CI
+## The cache
+
+Resized images are kept in `.jekyll-cache/magik` (`cache_dir`):
+
+```
+.jekyll-cache/magik/v1/objects/3f/3f9c...e1.webp   each image, read-only, named by its content key
+.jekyll-cache/magik/v1/index.json                  size and last use of each image
+.jekyll-cache/magik/v1/sources.json                digests and sizes of source images, so an
+                                                   unchanged file isn't read again
+.jekyll-cache/magik/v1/pages.json                  which page used which image
+```
+
+- Images are **hardlinked** into `_site` (copied if the cache is on another
+  filesystem), so a build with the cache writes them almost for free. Files
+  used as they are are always copied.
+- Nothing clears it implicitly: not a missing `_site`, a new Jekyll or a
+  changed config. `jekyll clean` removes it with the rest of `.jekyll-cache`
+  (a `cache_dir` elsewhere stays).
+- The JSON files only speed things up. If they're lost or unreadable, the
+  images are found from their file names again; an image that is missing or
+  cut short is made again.
+- **GC**: at the end of a full `jekyll build`, images this build didn't use
+  and that no build has used for `gc.max_age_days` are deleted. Never during
+  `jekyll serve`, `--watch`, `--incremental` or `--limit-posts` builds, which
+  don't use every image.
+- **Incremental builds** keep the images of the pages they skip: `pages.json`
+  says which they were. (jekyll-assets deleted them.)
+- Builds that share a cache can run at once: each merges its changes with the
+  others' when it saves.
+
+### Caching in CI
 
 The cache is safe to restore from any earlier build: entries are addressed by
 their content, and old ones are removed after `gc.max_age_days`.
