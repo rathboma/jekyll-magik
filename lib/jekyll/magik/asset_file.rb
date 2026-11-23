@@ -5,29 +5,11 @@ require "securerandom"
 
 module Jekyll
   module Magik
-    # An asset in _site, registered with Jekyll as a static file the first
-    # time a build uses it, and written in Jekyll's write phase.
-    #
-    # Originals are copied, never hardlinked: a tool that rewrites files in
-    # _site mustn't be able to edit a source in git. The copy goes to a temp
-    # file that is renamed over the destination, so nothing is ever written in
-    # place, and it keeps the source's mtime so that the next build can skip
-    # a destination that is already this file.
-    class AssetFile < Jekyll::StaticFile
-      attr_reader :source
-
-      def initialize(site, source)
-        @source = source
-        @dest_rel = source.dest_path.delete_prefix("/")
-        super(site, site.source, File.dirname(@dest_rel), File.basename(@dest_rel))
-        @relative_path = relative_source_path
-      end
-
-      # The file it's copied from.
-      def path
-        source.filename
-      end
-
+    # A file jekyll-magik writes to _site, registered with Jekyll as a static
+    # file the first time a build uses it, and written in Jekyll's write
+    # phase. The destination is always replaced by renaming a temp file over
+    # it, never written in place.
+    module OutputFile
       # Its URL path without the baseurl, like any Jekyll static file.
       def url
         "/#{@dest_rel}"
@@ -38,6 +20,54 @@ module Jekyll
         @destination[dest] ||= @site.in_dest_dir(dest, @dest_rel)
       end
 
+      private
+
+      # Yields a temp path next to the destination, then renames it over the
+      # destination.
+      def replace(dest_path)
+        FileUtils.mkdir_p(File.dirname(dest_path))
+        tmp = File.join(File.dirname(dest_path), ".magik-#{SecureRandom.hex(8)}.tmp")
+        yield tmp
+        File.rename(tmp, dest_path)
+      ensure
+        FileUtils.rm_f(tmp) if tmp
+      end
+
+      def lstat(path)
+        File.lstat(path)
+      rescue Errno::ENOENT, Errno::ENOTDIR
+        nil
+      end
+
+      def relative_to_source(path)
+        prefix = File.join(@site.source, "")
+        path.start_with?(prefix) ? path.delete_prefix(prefix) : path
+      end
+    end
+
+    # An original: a source file used as it is.
+    #
+    # Originals are copied, never hardlinked: a tool that rewrites files in
+    # _site mustn't be able to edit a source in git. The copy keeps the
+    # source's mtime so that the next build can skip a destination that is
+    # already this file.
+    class AssetFile < Jekyll::StaticFile
+      include OutputFile
+
+      attr_reader :source
+
+      def initialize(site, source)
+        @source = source
+        @dest_rel = source.dest_path.delete_prefix("/")
+        super(site, site.source, File.dirname(@dest_rel), File.basename(@dest_rel))
+        @relative_path = relative_to_source(source.filename)
+      end
+
+      # The file it's copied from.
+      def path
+        source.filename
+      end
+
       def modified_time
         source.mtime
       end
@@ -46,16 +76,11 @@ module Jekyll
         dest_path = destination(dest)
         return false if up_to_date?(dest_path)
 
-        FileUtils.mkdir_p(File.dirname(dest_path))
-        tmp = File.join(File.dirname(dest_path), ".magik-#{SecureRandom.hex(8)}.tmp")
-        begin
+        replace(dest_path) do |tmp|
           check_unchanged!
           IO.copy_stream(source.filename, tmp)
           check_unchanged!
           File.utime(source.stat.atime, source.mtime, tmp)
-          File.rename(tmp, dest_path)
-        ensure
-          FileUtils.rm_f(tmp)
         end
         true
       end
@@ -66,12 +91,10 @@ module Jekyll
       # the same size and mtime that isn't the source itself (a hardlink to it
       # is replaced by a copy). Its name has the content's digest in it.
       def up_to_date?(dest_path)
-        dest = File.lstat(dest_path)
+        dest = lstat(dest_path)
         src = source.stat
-        dest.file? && dest.size == src.size && dest.mtime == src.mtime &&
+        dest&.file? && dest.size == src.size && dest.mtime == src.mtime &&
           !(dest.ino == src.ino && dest.dev == src.dev)
-      rescue Errno::ENOENT, Errno::ENOTDIR
-        false
       end
 
       # The file's name and integrity come from its digest, taken when a page
@@ -85,10 +108,68 @@ module Jekyll
 
         raise Error, "#{source.filename} changed during the build; build again"
       end
+    end
 
-      def relative_source_path
-        prefix = File.join(@site.source, "")
-        source.filename.start_with?(prefix) ? source.filename.delete_prefix(prefix) : source.filename
+    # A derivative: an object from the Store, hardlinked into _site. Objects
+    # are read-only and never change once written (their name is their
+    # content key), so a destination that is the object's inode is up to
+    # date. Where hardlinks can't be made (the cache on another filesystem)
+    # it's copied, with the object's mtime.
+    class DerivativeFile < Jekyll::StaticFile
+      include OutputFile
+
+      attr_reader :object_path
+
+      # dest_path: relative to the site's destination. object_path: the
+      # object in the Store.
+      def initialize(site, dest_path, object_path)
+        @dest_rel = dest_path.delete_prefix("/")
+        @object_path = object_path
+        super(site, site.source, File.dirname(@dest_rel), File.basename(@dest_rel))
+        @relative_path = relative_to_source(object_path)
+      end
+
+      def path
+        object_path
+      end
+
+      def modified_time
+        @modified_time ||= object_stat&.mtime || Time.at(0)
+      end
+
+      def write(dest)
+        dest_path = destination(dest)
+        object = object_stat
+        unless object
+          raise Error,
+                "the cached image for #{url} (#{object_path}) was removed during the build; build again"
+        end
+        return false if up_to_date?(dest_path, object)
+
+        replace(dest_path) do |tmp|
+          File.link(object_path, tmp)
+        rescue Errno::EXDEV, Errno::EPERM, Errno::EMLINK, Errno::ENOTSUP, NotImplementedError
+          IO.copy_stream(object_path, tmp)
+          File.utime(object.atime, object.mtime, tmp)
+        end
+        true
+      end
+
+      private
+
+      def object_stat
+        File.stat(object_path)
+      rescue Errno::ENOENT, Errno::ENOTDIR
+        nil
+      end
+
+      # The object itself, or a copy of it (same size and mtime).
+      def up_to_date?(dest_path, object)
+        dest = lstat(dest_path)
+        return false unless dest&.file?
+
+        (dest.ino == object.ino && dest.dev == object.dev) ||
+          (dest.size == object.size && dest.mtime == object.mtime)
       end
     end
   end

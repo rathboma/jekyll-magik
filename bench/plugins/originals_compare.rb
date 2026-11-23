@@ -12,10 +12,16 @@
 #   site.magik's URL, and image_size.rb against asset_size
 # - the manifest: every original in jekyll-assets' sprockets manifest
 #   resolves to the same digest path, integrity and URL grammar
+# - with MAGIK_COMPARE_DERIVATIVES=1, every {% asset %} render with `magick:`
+#   args too: jekyll-magik processes each derivative (in its worker, into
+#   $MAGIK_COMPARE_CACHE, default a temp dir that later runs reuse), its
+#   <img> must match jekyll-assets' apart from src and integrity, and its
+#   pixel size must be the size of jekyll-assets' ImageMagick output
 #
 # Writes a JSON report to $MAGIK_COMPARE_REPORT and prints a summary.
 
 require "json"
+require "tmpdir"
 require_relative "../../lib/jekyll/magik/core"
 
 module MagikCompare
@@ -25,9 +31,18 @@ module MagikCompare
   class << self
     attr_reader :report
 
+    def derivatives?
+      ENV["MAGIK_COMPARE_DERIVATIVES"] == "1"
+    end
+
     def reset!(site)
       @site = site
+      cache = ENV.fetch("MAGIK_COMPARE_CACHE") { File.join(Dir.tmpdir, "magik-compare-cache") }
+      site.config["magik"] = (site.config["magik"] || {}).merge("cache_dir" => cache)
       @api = Jekyll::Magik::Api.new(site, write_files: false)
+      @pairs = {}
+      @refs_by_url = nil
+      @derive_seconds = 0.0
       @plans = {}
       @report = Hash.new(0)
       @examples = Hash.new { |h, k| h[k] = [] }
@@ -50,12 +65,13 @@ module MagikCompare
 
     def compare_tag(markup, ctx, theirs)
       plan = plan(markup)
-      if plan.error && plan.args.is_a?(Hash) && plan.args.key?(:magick)
-        return count("tags: magick: (resized, not compared until #3)")
-      end
+      magick = plan.args.is_a?(Hash) && plan.args.key?(:magick)
+      return count("tags: magick: (not compared; set MAGIK_COMPARE_DERIVATIVES=1)") if magick && !derivatives?
 
       example = { "page" => page_path(ctx), "tag" => "{% asset #{markup.strip} %}",
                   "jekyll-assets" => theirs }
+      return compare_derivative(plan, ctx, theirs, example) if magick
+
       begin
         ctx.registers[:magik] = @api
         ours = Jekyll::Magik::Renderer.new(@api).render(plan, ctx)
@@ -79,6 +95,67 @@ module MagikCompare
       else
         count("tags: DIFFERENT", example.merge("jekyll-magik" => ours))
       end
+    end
+
+    # The derivative's markup now; its size after the write phase, when
+    # jekyll-assets' file is in _site.
+    def compare_derivative(plan, ctx, theirs, example)
+      ctx.registers[:magik] = @api
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      ours = Jekyll::Magik::Renderer.new(@api).render(plan, ctx)
+      @derive_seconds += Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      ref = derivative_for(ours[%r{/assets/[^"'\s]+}])
+      their_url = theirs[%r{/assets/[^"'\s]+}]
+      @pairs[[their_url, ref.url]] ||= [ref, example.merge("jekyll-magik" => ours)]
+      check_url(ref.url, example)
+      return count("derivatives: @path") if plan.mode == :path
+
+      stripped = theirs.sub(their_url, ref.url).sub(/ integrity="[^"]*"/, "").sub(' crossorigin="anonymous"',
+                                                                                  "")
+      if stripped == ours
+        count("derivatives: <img> identical apart from src and integrity")
+      else
+        count("derivatives: <img> DIFFERENT", example.merge("jekyll-magik" => ours))
+      end
+    rescue Jekyll::Magik::Error => e
+      count("tags: jekyll-magik raises", example.merge("error" => e.message))
+    ensure
+      ctx.registers.delete(:magik)
+    end
+
+    def derivative_for(url)
+      @refs_by_url = @api.derivatives.to_h { |r| [r.url, r] } unless @refs_by_url&.key?(url)
+      @refs_by_url.fetch(url)
+    end
+
+    def compare_derivative_sizes
+      @pairs.each_value do |ref, example|
+        their_file = File.join(@site.dest, example["jekyll-assets"][%r{/assets/[^"'\s]+}].to_s)
+        theirs = FastImage.size(their_file)
+        actual = FastImage.size(@api.store.object_path(ref.dkey, ref.ext))
+        ours = [ref.width, ref.height]
+        if theirs.nil?
+          count("derivatives: jekyll-assets' file MISSING", example)
+        elsif theirs == ours && actual == ours
+          count("derivatives: same size as ImageMagick's")
+        else
+          count("derivatives: size DIFFERENT",
+                example.merge("sizes" => { "imagemagick" => theirs, "predicted" => ours,
+                                           "libvips" => actual }))
+        end
+      end
+      report_derivative_stats
+      @api.store.save(full_build: false, site_source: @site.source)
+    end
+
+    def report_derivative_stats
+      stats = @api.stats
+      {
+        "unique (dkeys)" => stats[:derivatives], "references" => stats[:references],
+        "cached" => stats[:cached], "processed" => stats[:processed],
+        "seconds processing" => stats[:seconds].round(1),
+        "seconds rendering tags, processing aside" => (@derive_seconds - stats[:seconds]).round(2)
+      }.each { |key, value| @report["derivatives: #{key}"] = value }
     end
 
     def compare_digest_path(name, theirs)
@@ -136,6 +213,7 @@ module MagikCompare
 
     def finish
       compare_manifest
+      compare_derivative_sizes if derivatives?
       out = { "counts" => @report.sort.to_h, "examples" => @examples }
       path = ENV.fetch("MAGIK_COMPARE_REPORT", nil)
       File.write(path, JSON.pretty_generate(out)) if path

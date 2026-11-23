@@ -28,8 +28,10 @@ module Jekyll
 
       attr_reader :config
 
-      def initialize(config)
+      # memo: the Store, whose source memo the Sources use.
+      def initialize(config, memo: nil)
         @config = config
+        @memo = memo
         @load_paths = config.load_paths.select { |path| File.directory?(path) }
         @listings = {}
         @files = {}
@@ -150,7 +152,7 @@ module Jekyll
         path = candidate.index ? candidate.filename.sub(%r{/index(\.[^/]+)\z}, '\1') : candidate.filename
         logical = logical_path(path)
         @sources[[candidate.filename, logical]] ||= Source.new(
-          filename: candidate.filename, logical_path: logical, content_type: type, config: config
+          filename: candidate.filename, logical_path: logical, content_type: type, config: config, memo: @memo
         )
       end
 

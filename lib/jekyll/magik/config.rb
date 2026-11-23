@@ -153,7 +153,6 @@ module Jekyll
         @webp_quality = integer_option(magik, "webp_quality", DEFAULT_WEBP_QUALITY, 1..100)
         @derivative_integrity = boolean_option(magik, "derivative_integrity", false)
         @manifest = boolean_option(magik, "manifest", false)
-        @warnings << "`magik: manifest` isn't implemented yet, so no manifest is written" if @manifest
       end
 
       def read_gc(value)

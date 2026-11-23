@@ -4,13 +4,16 @@ require "liquid"
 
 module Jekyll
   module Magik
-    # {% asset name [attributes] [@path | @inline] %}
+    # {% asset name [magick:...] [attributes] [@path | @inline] %}
     #
     # - default: an <img> with the tag's attributes in order, then `src`, and
     #   `integrity` and `crossorigin="anonymous"` when
     #   `assets: defaults: img: integrity` is on, as jekyll-assets wrote it
     # - `@path`: the asset's URL only
     # - `@inline`: an SVG's markup, with the attributes on its root element
+    #
+    # With `magick:` arguments, the URL is a derivative's (see Registry),
+    # and its <img> gets `integrity` only with `magik.derivative_integrity`.
     class Tag < Liquid::Tag
       def initialize(tag_name, markup, parse_context)
         super
@@ -40,6 +43,9 @@ module Jekyll
         args = plan.render_args(context)
         source = find(args[:argv1], plan, page)
         check_mode!(plan.mode, source)
+        transform = plan.transform(args)
+        return derivative(source, transform, plan, args, page) if transform
+
         @api.use(source, page: page)
         case plan.mode
         when :path then source.url
@@ -73,13 +79,27 @@ module Jekyll
       end
 
       def img(source, plan, args)
+        integrity = @api.config.img_integrity ? source.integrity : nil
+        Html.img(img_attributes(plan, args, source.url, integrity))
+      end
+
+      def derivative(source, transform, plan, args, page)
+        ref = @api.derive(source, transform, page: page)
+        return ref.url if plan.mode == :path
+
+        integrity = @api.config.derivative_integrity ? @api.integrity(ref) : nil
+        Html.img(img_attributes(plan, args, ref.url, integrity))
+      end
+
+      # The tag's attributes, then src, integrity and crossorigin.
+      def img_attributes(plan, args, url, integrity)
         attributes = plan.attributes(args)
-        set(attributes, :src, source.url)
-        if @api.config.img_integrity && !args.key?(:integrity)
-          set(attributes, :integrity, source.integrity)
+        set(attributes, :src, url)
+        if integrity && !args.key?(:integrity)
+          set(attributes, :integrity, integrity)
           attributes << [:crossorigin, "anonymous"] unless args.key?(:crossorigin)
         end
-        Html.img(attributes)
+        attributes
       end
 
       def inline(source, plan, args)

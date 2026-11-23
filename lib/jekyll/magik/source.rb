@@ -13,15 +13,17 @@ module Jekyll
     #   /assets/<logical path minus ext>-<sha512 hex of the file>.<ext>
     #
     # The digest and the pixel size are read lazily and at most once: a Source
-    # lives for one build.
+    # lives for one build. With a memo (the Store), they are read from the
+    # file only when it changed since a build read them last.
     class Source
-      attr_reader :filename, :logical_path, :content_type, :config
+      attr_reader :filename, :logical_path, :content_type, :config, :memo
 
-      def initialize(filename:, logical_path:, content_type:, config:)
+      def initialize(filename:, logical_path:, content_type:, config:, memo: nil)
         @filename = filename
         @logical_path = logical_path
         @content_type = content_type
         @config = config
+        @memo = memo
       end
 
       def stat
@@ -41,7 +43,11 @@ module Jekyll
       def digest
         @digest ||= begin
           stat
-          Digest::SHA512.file(filename).hexdigest
+          memo&.source_info(filename, stat)&.fetch("sha512", nil) || begin
+            hex = Digest::SHA512.file(filename).hexdigest
+            memo&.remember_source(filename, stat, "sha512" => hex)
+            hex
+          end
         end
       end
 
@@ -85,13 +91,12 @@ module Jekyll
         content_type == Mime::SVG
       end
 
-      # [width, height] in pixels, from the file's header.
+      # [width, height] in pixels, from the file's header. A JPEG's are after
+      # its EXIF rotation.
       def dimensions
         @dimensions ||= begin
-          FastImage.size(filename, raise_on_failure: true)
-        rescue FastImage::FastImageException => e
-          raise Error,
-                "can't read the size of #{logical_path} (#{filename}): #{e.class.name.split("::").last}"
+          info = memo&.source_info(filename, stat)
+          info&.key?("width") ? info.values_at("width", "height") : read_dimensions
         end
       end
 
@@ -105,6 +110,19 @@ module Jekyll
 
       def inspect
         "#<#{self.class.name} #{logical_path}>"
+      end
+
+      private
+
+      def read_dimensions
+        image = FastImage.new(filename, raise_on_failure: true)
+        size = image.size
+        memo&.remember_source(filename, stat,
+                              "width" => size[0], "height" => size[1], "type" => image.type.to_s)
+        size
+      rescue FastImage::FastImageException => e
+        raise Error,
+              "can't read the size of #{logical_path} (#{filename}): #{e.class.name.split("::").last}"
       end
     end
   end

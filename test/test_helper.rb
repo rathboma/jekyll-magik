@@ -7,6 +7,7 @@ require "minitest/mock"
 require "fileutils"
 require "json"
 require "tmpdir"
+require "zlib"
 require "jekyll"
 require "jekyll-magik"
 
@@ -22,6 +23,9 @@ module MagikTestHelper
   DIGESTED = %r{/assets/[\w./-]+?-(?:[0-9a-f]{64,128}|[0-9A-Z]{8})\.[a-z0-9]+}
 
   HEX128 = /\h{128}/
+
+  # A derivative's URL: /assets/<logical path minus ext>-<tkey>-<dkey>.<ext>
+  DERIVATIVE = %r{\A/assets/(.+)-(\h{10})-(\h{64})\.([a-z0-9]+)\z}
 
   # A copy of the fixture site in a temp dir, with extra or replaced files.
   def fixture_copy(files = {})
@@ -71,12 +75,40 @@ module MagikTestHelper
     )
   end
 
+  # The fixture itself, for rendering. Its caches go to a temp dir, so tests
+  # never write into the repository.
   def fixture_site
     @fixture_site ||= begin
-      site = site_for(FIXTURE, "destination" => Dir.mktmpdir("magik-dest-"))
+      tmp = Dir.mktmpdir("magik-fixture-")
+      (@tmpdirs ||= []) << tmp
+      site = site_for(FIXTURE, "destination" => File.join(tmp, "_site"), "disable_disk_cache" => true,
+                               "magik" => { "cache_dir" => File.join(tmp, "cache") })
       site.reset
       site
     end
+  end
+
+  # A real PNG of that size, its pixels from `seed`, so that different seeds
+  # give different files.
+  def png(width, height, seed: 0)
+    row = (0...width).map { |x| [((x * 7) + seed) % 256, (seed * 13) % 256, (x + (seed * 3)) % 256] }.flatten.pack("C*")
+    raw = ("\0#{row}" * height).b
+    chunk = lambda do |type, data|
+      [data.bytesize].pack("N") + type + data + [Zlib.crc32(type + data)].pack("N")
+    end
+    "\x89PNG\r\n\x1a\n".b + chunk.call("IHDR", [width, height, 8, 2, 0, 0, 0].pack("NNCCCCC")) +
+      chunk.call("IDAT", Zlib::Deflate.deflate(raw)) + chunk.call("IEND", "")
+  end
+
+  # [logical path minus ext, tkey, dkey, ext] of a derivative URL.
+  def derivative_parts(url)
+    m = DERIVATIVE.match(url)
+    assert m, "#{url} isn't a derivative URL"
+    m.captures
+  end
+
+  def object_files(dir, cache = ".jekyll-cache/magik")
+    Dir.glob(File.join(dir, cache, "v1/objects/*/*"))
   end
 
   def sha512(path)

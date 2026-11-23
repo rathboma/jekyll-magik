@@ -85,7 +85,9 @@ class FixtureSiteTest < Minitest::Test
     )
     site_assets = File.join(@dir, "_site", "assets")
     written = Dir.glob("**/*", base: site_assets).select { |f| File.file?(File.join(site_assets, f)) }
-    assert_equal logical.map { |l| url(l).delete_prefix("/assets/") }.sort, written.sort
+    originals = written.grep_v(/-\h{10}-\h{64}\.[a-z]+\z/)
+    assert_equal logical.map { |l| url(l).delete_prefix("/assets/") }.sort, originals.sort
+    assert_equal 8, (written - originals).size
 
     logical.each do |l|
       out = File.join(@dir, "_site", url(l))
@@ -97,12 +99,49 @@ class FixtureSiteTest < Minitest::Test
   end
 
   def test_every_url_matches_the_translation_workers_digest_grammar
-    urls = @html.scan(%r{/assets/[^"'\s<]+})
-    assert_operator urls.size, :>=, 15
+    urls = (@html + read_output(@dir, "resized.html")).scan(%r{/assets/[^"'\s<]+})
+    assert_operator urls.size, :>=, 23
     urls.each do |u|
       match = DIGESTED.match(u)
       assert match, "#{u} doesn't match the digest grammar"
       assert_equal u, match[0]
+    end
+  end
+
+  RESIZED = {
+    "thumb" => ["img/blog/default", "jpg", [600, 300]],
+    "to-webp" => ["img/logo", "webp", [24, 16]],
+    "poster" => ["img/photo", "jpg", [64, 48]],
+    "card" => ["img/logo", "jpg", [16, 11]],
+    "png" => ["img/home/edit-schema", "png", [8, 6]]
+  }.freeze
+
+  def test_resized_images
+    html = read_output(@dir, "resized.html")
+    urls = RESIZED.to_h { |id, _| [id, element(html, id)[%r{/assets/[^"'\s<]+}]] }
+    # Derivatives get no integrity, though originals have it in this site.
+    assert_equal %(<img alt='Resized &amp; "converted"' src="#{urls["thumb"]}">), element(html, "thumb")
+    assert_equal %(<img class="card" alt="Card" loading="lazy" src="#{urls["card"]}">), element(html, "card")
+    assert_equal urls["poster"], element(html, "poster")
+    RESIZED.each do |id, (stem, ext, size)|
+      parts = derivative_parts(urls[id])
+      assert_equal [stem, ext], parts.values_at(0, 3), id
+      assert_equal size, FastImage.size(File.join(@dir, "_site", urls[id])), id
+    end
+    srcset = element(html, "srcset").split
+    assert_equal([[4, 2], [8, 4], [12, 6]], srcset.map { |u| FastImage.size(File.join(@dir, "_site", u)) })
+    # Each width has its own stem, so the translation Worker tells them apart.
+    assert_equal 3, srcset.map { |u| derivative_parts(u)[0, 2] }.uniq.size
+  end
+
+  def test_resized_images_are_read_only_hardlinks_to_the_cache
+    files = Dir.glob(File.join(@dir, "_site/assets/**/*-*-*.*")).grep(/-\h{10}-\h{64}\./)
+    assert_equal 8, files.size
+    files.each do |f|
+      dkey, ext = File.basename(f)[/-(\h{64}\.\w+)\z/, 1].split(".")
+      object = File.join(@dir, ".jekyll-cache/magik/v1/objects", dkey[0, 2], "#{dkey}.#{ext}")
+      assert_equal File.stat(object).ino, File.stat(f).ino, f
+      assert_equal 0o444, File.stat(object).mode & 0o777
     end
   end
 
@@ -128,10 +167,12 @@ class FixtureSiteTest < Minitest::Test
   def test_an_incremental_rebuild_keeps_the_assets_of_skipped_pages
     _, dir = build(config: { "incremental" => true })
     files = Dir.glob(File.join(dir, "_site/assets/**/*")).select { |f| File.file?(f) }
-    assert_equal 11, files.size
-    site_for(dir, "incremental" => true).process
+    assert_equal 19, files.size
+    site = site_for(dir, "incremental" => true)
+    site.process
+    assert_equal 0, site.magik.stats[:references], "pages were rendered again"
     files.each { |f| assert File.file?(f), "#{f} was deleted" }
-    html = read_output(dir)
+    html = read_output(dir) + read_output(dir, "resized.html")
     html.scan(%r{/assets/[^"'\s<]+}).each { |u| assert File.file?(File.join(dir, "_site", u)), u }
 
     # A full build still cleans up what nothing uses any more.
@@ -181,7 +222,7 @@ class FixtureSiteErrorsTest < Minitest::Test
   def test_out_of_scope_arguments_name_the_page
     {
       %({% asset logo.png @data %}) => "`@data` (data URIs) isn't supported",
-      %({% asset logo.png magick:resize='10x' %}) => "resizing with `magick:` isn't supported yet",
+      %({% asset logo.png magick:rotate='90' %}) => "`magick:rotate` isn't supported",
       %({% asset main.css %}) => "stylesheets (.css) aren't supported",
       %({% asset logo.png @inline %}) => "`@inline` only supports SVG files",
       %({% asset clip.mp4 %}) => "video/mp4 assets can only be used with `@path`"

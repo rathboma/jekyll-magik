@@ -28,6 +28,8 @@ Naming/FileName:
 
 Metrics/ClassLength:
   Max: 250
+  Exclude:
+    - "test/**/*"
 
 Metrics/ModuleLength:
   Max: 250
