@@ -1,19 +1,15 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "open3"
-require "rbconfig"
+require "base64"
 
 class WorkerTest < Minitest::Test
   include MagikTestHelper
 
-  LIB = File.expand_path("../lib", __dir__)
-
   # CLAUDE.md, rule 5: Jekyll's process resizes through a worker and never
   # loads libvips itself.
   def test_jekyll_never_loads_libvips
-    dir = fixture_copy
-    out, err, status = Open3.capture3(RbConfig.ruby, "-I", LIB, "-e", <<~RUBY, dir)
+    out = ruby_subprocess(<<~RUBY, fixture_copy)
       require "jekyll"
       require "jekyll-magik"
       site = Jekyll::Site.new(Jekyll.configuration("source" => ARGV[0], "destination" => File.join(ARGV[0], "_site"),
@@ -21,19 +17,110 @@ class WorkerTest < Minitest::Test
       site.process
       print site.magik.stats[:processed], " ", $LOADED_FEATURES.grep(/vips/).size
     RUBY
-    assert status.success?, err
     assert_equal "8 0", out
   end
+
+  BUILD_IN_PROCESS = <<~RUBY
+    require "jekyll"
+    require "jekyll-magik"
+    site = Jekyll::Site.new(Jekyll.configuration("source" => ARGV[0], "destination" => File.join(ARGV[0], "_site"),
+                                                 "quiet" => true, "magik" => { "workers" => 0 }))
+    site.process
+    print site.magik.stats[:processed], " ", defined?(Vips) ? "vips" : "no vips"
+  RUBY
 
   # `workers: 0` runs the same pipeline in Jekyll's process.
   def test_in_process_mode_writes_the_same_bytes
     _, spawned = build
-    _, in_process = build(config: { "magik" => { "workers" => 0 } })
+    in_process = fixture_copy
+    assert_equal "8 vips", ruby_subprocess(BUILD_IN_PROCESS, in_process)
     a = object_files(spawned)
     b = object_files(in_process)
     assert_equal 8, a.size
     assert_equal(a.map { |f| File.basename(f) }, b.map { |f| File.basename(f) })
     a.zip(b).each { |x, y| assert_equal File.binread(x), File.binread(y), File.basename(x) }
+  end
+
+  # libvips caches loads by file name. With `workers: 0` the cache is in
+  # Jekyll's own process, which lives through every `jekyll serve` rebuild.
+  def test_in_process_mode_reads_a_changed_file_again
+    dir = fixture_copy("index.html" => "---\n---\n{% asset logo.png magick:format='webp' @path %}\n",
+                       "resized.html" => nil)
+    out = ruby_subprocess(<<~RUBY, dir, Base64.strict_encode64(png(12, 8, seed: 120)))
+      require "base64"
+      require "jekyll"
+      require "jekyll-magik"
+      site = Jekyll::Site.new(Jekyll.configuration("source" => ARGV[0], "destination" => File.join(ARGV[0], "_site"),
+                                                   "quiet" => true, "magik" => { "workers" => 0 }))
+      site.process
+      first = File.read(File.join(ARGV[0], "_site/index.html")).strip
+      File.binwrite(File.join(ARGV[0], "_assets/img/logo.png"), Base64.strict_decode64(ARGV[1]))
+      site.process
+      second = File.read(File.join(ARGV[0], "_site/index.html")).strip
+      objects = [first, second].map do |url|
+        dkey = url[/\\h{64}(?=\\.webp\\z)/]
+        File.join(ARGV[0], ".jekyll-cache/magik/v1/objects", dkey[0, 2], "\#{dkey}.webp")
+      end
+      print objects.map { |path| Vips::Image.new_from_file(path).avg }.join(" ")
+    RUBY
+    first, second = out.split.map(&:to_f)
+    refute_in_delta first, second, 1.0
+  end
+
+  ORIENTATION = File.expand_path("fixtures/orientation", __dir__)
+
+  # The fixtures are 40x30, black on the left half, with EXIF orientation 6.
+  # FastImage turns only JPEGs upright, so only JPEGs are rotated: a PNG or
+  # WebP keeps its stored orientation instead of being rotated and then
+  # squashed into the size predicted from the unrotated one.
+  def test_only_jpegs_are_turned_upright
+    files = %w(png webp jpg).to_h { |ext| ["_assets/img/rotated.#{ext}", File.binread("#{ORIENTATION}/rotated.#{ext}")] }
+    site = site_for(fixture_copy(files))
+    site.reset
+    out = %w(png webp jpg).to_h do |ext|
+      url = render(%({% asset rotated.#{ext} magick:resize='20x' magick:format='webp' @path %}), site: site)
+      dkey = url[/\h{64}(?=\.webp\z)/]
+      [ext, File.join(site.magik.store.objects_dir, dkey[0, 2], "#{dkey}.webp")]
+    end
+    %w(png webp).each do |ext|
+      image = pixels(out[ext], [[3, 7], [16, 7]])
+      assert_equal [20, 15], image["size"], ext
+      assert_operator image["points"][0], :<, 60, "#{ext}: the left half isn't black"
+      assert_operator image["points"][1], :>, 200, "#{ext}: the right half isn't white"
+    end
+    # Rotated 90 degrees clockwise: the black half is on top.
+    image = pixels(out["jpg"], [[10, 3], [10, 23]])
+    assert_equal [20, 27], image["size"]
+    assert_operator image["points"][0], :<, 60
+    assert_operator image["points"][1], :>, 200
+  end
+
+  def test_a_source_libvips_reads_at_another_size_fails_the_job
+    src = File.join(ORIENTATION, "rotated.png")
+    stat = File.stat(src)
+    dir = Dir.mktmpdir
+    (@tmpdirs ||= []) << dir
+    reply = Jekyll::Magik::Processor.new.run(
+      "id" => "x", "source" => src, "source_size" => stat.size,
+      "source_mtime_ns" => (stat.mtime.to_i * 1_000_000_000) + stat.mtime.nsec,
+      "source_width" => 30, "source_height" => 40, "autorotate" => false,
+      "steps" => [["resize", 15, 20]], "format" => "png", "quality" => nil,
+      "tmp" => File.join(dir, ".tmp-x"), "output" => File.join(dir, "x.png")
+    )
+    refute reply["ok"]
+    assert_includes reply["error"], "libvips reads #{src} as 40x30, not 30x40"
+    refute File.exist?(File.join(dir, "x.png"))
+  end
+
+  def test_a_worker_that_died_while_idle_is_replaced
+    processor = Jekyll::Magik::Processor.new
+    assert_equal false, processor.run("id" => "a", "source" => "/nope.png")["ok"]
+    dead = processor.pid
+    Process.kill(:KILL, dead)
+    assert_equal false, processor.run("id" => "b", "source" => "/nope.png")["ok"]
+    refute_equal dead, processor.pid
+  ensure
+    processor&.stop
   end
 
   def fake_worker(code)

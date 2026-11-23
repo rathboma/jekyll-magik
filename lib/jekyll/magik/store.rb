@@ -53,6 +53,7 @@ module Jekyll
       # A new build.
       def reset!
         @used = Set.new
+        @checked = Set.new
         @sources_seen = Set.new
         @source_updates = {}
         @page_updates = {}
@@ -70,18 +71,24 @@ module Jekyll
         stat = file_stat(path)
         entry = @index[dkey]
         if entry
-          return entry if stat && stat.size == entry["bytes"] &&
-                          entry.values_at("ext", "width", "height") == [ext, width, height]
+          if stat && stat.size == entry["bytes"] &&
+             entry.values_at("ext", "width", "height") == [ext, width, height]
+            @checked << dkey
+            return entry
+          end
 
           @index.delete(dkey)
         end
-        return nil unless stat&.size&.positive? && image_size(path) == [width, height]
+        return nil unless stat&.size&.positive? && image_size(path) == [width, height] &&
+                          complete?(path, ext, stat.size)
 
+        @checked << dkey
         @index[dkey] = { "ext" => ext, "bytes" => stat.size, "width" => width, "height" => height }
       end
 
       # Records an object a worker has just written.
       def record(dkey, ext:, bytes:, width:, height:)
+        @checked << dkey
         @index[dkey] = { "ext" => ext, "bytes" => bytes, "width" => width, "height" => height }
       end
 
@@ -152,6 +159,9 @@ module Jekyll
             result = gc(index, gc_max_age_days, now) if gc_max_age_days
             prune(sources, site_source) { |path| @sources_seen.include?(path) }
             prune(pages, site_source) { |path| live_pages.include?(path) } if live_pages
+            # Other checkouts' entries, once their files are gone.
+            sources.select! { |path, _| File.exist?(path) }
+            pages.select! { |path, _| File.exist?(path) || live_pages&.include?(path) }
           end
           write_json("index.json", index)
           write_json("sources.json", sources)
@@ -180,19 +190,46 @@ module Jekyll
         end
       end
 
-      # Entries from disk and from this process; this process's win (it has
-      # just checked them), keeping the later last use and a known sha512.
+      # What's on disk, with the entries this process checked against their
+      # objects in this build (the rest it only loaded, and disk may know
+      # better), keeping a known sha512. Everything this build used was last
+      # used now.
       def merge_index(disk, now)
-        @used.each do |dkey|
-          @index[dkey]["last_used_at"] = now if @index[dkey]
-        end
-        disk.merge(@index) do |_dkey, theirs, ours|
-          merged = ours.merge("last_used_at" => [theirs["last_used_at"].to_i, ours["last_used_at"].to_i].max)
-          if !merged["sha512"] && theirs["sha512"] && theirs["bytes"] == ours["bytes"]
-            merged["sha512"] = theirs["sha512"]
+        merged = disk.merge(@index.slice(*@checked)) do |_dkey, theirs, ours|
+          if !ours["sha512"] && theirs["sha512"] && theirs["bytes"] == ours["bytes"]
+            ours.merge("sha512" => theirs["sha512"])
+          else
+            ours
           end
-          merged
         end
+        @used.each do |dkey|
+          entry = merged[dkey] || @index[dkey]
+          merged[dkey] = entry.merge("last_used_at" => [entry["last_used_at"].to_i, now].max) if entry
+        end
+        merged
+      end
+
+      # Whether an object without an index entry is whole: the formats'
+      # own ends (PNG's IEND chunk, JPEG's EOI marker, WebP's RIFF length),
+      # since FastImage only reads the header.
+      def complete?(path, ext, size)
+        File.open(path, "rb") do |file|
+          case ext
+          when "png"
+            file.seek(-12, IO::SEEK_END)
+            file.read(12) == "\0\0\0\0IEND\xAEB`\x82".b
+          when "jpg"
+            file.seek(-2, IO::SEEK_END)
+            file.read(2) == "\xFF\xD9".b
+          when "webp"
+            header = file.read(12)
+            header.start_with?("RIFF") && header.byteslice(8, 4) == "WEBP" &&
+              header.byteslice(4, 4).unpack1("V") + 8 == size
+          else false
+          end
+        end
+      rescue SystemCallError, NoMethodError
+        false
       end
 
       # Removes objects this build didn't use whose last use (or, with no

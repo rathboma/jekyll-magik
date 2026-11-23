@@ -61,24 +61,52 @@ class StoreTest < Minitest::Test
     assert_nil s.fetch(dkey, "png", 4, 3)
   end
 
-  def test_only_full_builds_prune_this_sites_memo_and_pages
+  # Full builds drop this site's entries that the build didn't see, and
+  # anyone's whose file is gone (another checkout sharing the cache).
+  def test_only_full_builds_prune_the_memo_and_pages
+    site = File.join(@dir, "site")
+    other = File.join(@dir, "other")
+    [site, other].each { |d| FileUtils.mkdir_p(d) }
+    %w(site/old.png site/gone.html site/index.html other/a.png other/page.html).each do |f|
+      File.write(File.join(@dir, f), "x")
+    end
+    path = ->(f) { File.join(@dir, f) }
     s = store
     stat = File.stat(__FILE__)
-    s.remember_source("/site/_assets/old.png", stat, "sha512" => "x")
-    s.remember_source("/other/_assets/a.png", stat, "sha512" => "y")
-    s.update_page("/site/gone.html", [])
-    s.update_page("/other/page.html", [])
-    s.save(full_build: false, site_source: "/site")
+    s.remember_source(path.call("site/old.png"), stat, "sha512" => "x")
+    s.remember_source(path.call("other/a.png"), stat, "sha512" => "y")
+    s.remember_source(path.call("other/deleted.png"), stat, "sha512" => "z")
+    %w(site/gone.html other/page.html other/deleted.html).each { |f| s.update_page(path.call(f), []) }
+    s.save(full_build: false, site_source: site)
 
     s = store
-    s.update_page("/site/index.html", [])
-    s.save(full_build: false, site_source: "/site", live_pages: Set["/site/index.html"])
-    assert_equal 2, saved("sources.json").size
-    assert_equal 3, saved("pages.json").size
+    s.update_page(path.call("site/index.html"), [])
+    live = Set[path.call("site/index.html")]
+    s.save(full_build: false, site_source: site, live_pages: live)
+    assert_equal 3, saved("sources.json").size
+    assert_equal 4, saved("pages.json").size
 
-    s.save(full_build: true, site_source: "/site", live_pages: Set["/site/index.html"])
-    assert_equal ["/other/_assets/a.png"], saved("sources.json").keys
-    assert_equal %w(/other/page.html /site/index.html), saved("pages.json").keys
+    s.save(full_build: true, site_source: site, live_pages: live)
+    assert_equal [path.call("other/a.png")], saved("sources.json").keys
+    assert_equal [path.call("other/page.html"), path.call("site/index.html")], saved("pages.json").keys
+  end
+
+  # Without an index entry, an object is only taken if it's whole:
+  # FastImage reads nothing but the header.
+  def test_an_object_without_an_entry_must_be_whole
+    s = store
+    fixtures = File.join(FIXTURE, "_assets/img")
+    { "png" => ["logo.png", [12, 8]], "jpg" => ["photo.jpg", [8, 6]], "webp" => ["shot.webp", [10, 5]] }
+      .each_with_index do |(ext, (file, size)), i|
+        bytes = File.binread(File.join(fixtures, file))
+        dkey = "e#{i}#{"0" * 62}"
+        path = s.object_path(dkey, ext)
+        FileUtils.mkdir_p(File.dirname(path))
+        File.binwrite(path, bytes.byteslice(0, bytes.bytesize - 3))
+        assert_nil s.fetch(dkey, ext, *size), "a cut #{ext} was taken"
+        File.binwrite(path, bytes)
+        assert s.fetch(dkey, ext, *size), "a whole #{ext} wasn't taken"
+      end
   end
 
   def test_the_source_memo_needs_the_same_file

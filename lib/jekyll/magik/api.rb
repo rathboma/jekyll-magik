@@ -288,10 +288,13 @@ module Jekyll
         entries = store.page_assets(key)
         return @page_map_incomplete = true unless entries.is_a?(Array)
 
-        entries.each do |kind, *rest|
-          restored = case kind
-                     when "o" then restore_original(*rest)
-                     when "d" then restore_derivative(*rest)
+        entries.each do |entry|
+          restored = case entry
+                     in ["o", String => logical_path, String => path]
+                       restore_original(logical_path, path)
+                     in ["d", String => path, String => logical_path, String => canonical]
+                       restore_derivative(path, logical_path, canonical)
+                     else false
                      end
           @page_map_incomplete = true unless restored
         end

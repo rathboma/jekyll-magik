@@ -274,6 +274,40 @@ class CacheTest < Minitest::Test
     read_output(dir).scan(%r{/assets/[^"'\s<]+}).each { |u| assert File.file?(File.join(dir, "_site", u)), u }
   end
 
+  # Each quality setting goes into the content key only of output that
+  # uses it: JPEGs and WebPs without their own quality.
+  def test_quality_settings_change_only_output_that_uses_them
+    dir = fixture_copy
+    tags = {
+      webp: %({% asset shot.webp magick:resize='4x' @path %}),
+      webp_q: %({% asset shot.webp magick:resize='4x' magick:quality='80' @path %}),
+      jpg: %({% asset photo.jpg magick:resize='4x' @path %}),
+      png: %({% asset logo.png magick:resize='4x' @path %})
+    }
+    urls = lambda do |magik|
+      site = site_for(dir, "magik" => magik)
+      site.reset
+      tags.transform_values { |tag| render(tag, site: site) }
+    end
+    base = urls.call({})
+    assert_equal base.merge(webp: urls.call("webp_quality" => 50)[:webp]), urls.call("webp_quality" => 50)
+    refute_equal base[:webp], urls.call("webp_quality" => 50)[:webp]
+    jpeg = urls.call("jpeg_quality" => 50)
+    assert_equal base.except(:jpg), jpeg.except(:jpg)
+    refute_equal base[:jpg], jpeg[:jpg]
+  end
+
+  def test_a_malformed_page_map_falls_back_to_keeping_every_file
+    _, dir = build(config: { "incremental" => true })
+    files = Dir.glob(File.join(dir, "_site/assets/**/*")).select { |f| File.file?(f) }
+    pages = File.join(dir, CACHE, "pages.json")
+    data = JSON.parse(File.read(pages))
+    data[File.join(dir, "resized.html")] = [%w(d x), ["o"], "junk", ["d", 1, 2, 3]]
+    File.write(pages, JSON.generate(data))
+    rebuild(dir, "incremental" => true)
+    files.each { |f| assert File.file?(f), "#{f} was deleted" }
+  end
+
   def test_the_manifest
     site, dir = build(config: { "magik" => { "manifest" => true } })
     manifest = JSON.parse(read_output(dir, "assets/magik-manifest.json"))

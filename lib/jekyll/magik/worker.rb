@@ -28,9 +28,6 @@ rescue LoadError => e
   exit(1)
 end
 
-# Jobs never share operations, and a cached load could hand back a file's
-# old pixels after it changes during `jekyll serve`.
-Vips.cache_set_max(0)
 protocol.puts(JSON.generate("ready" => true, "vips" => Vips.version_string, "pid" => Process.pid))
 
 while (line = $stdin.gets)

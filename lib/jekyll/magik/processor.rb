@@ -57,12 +57,17 @@ module Jekyll
         # say so once per process, not with a new process per image.
         raise @failed_start if @failed_start
 
-        start unless @pid
-        line = begin
-          @input.puts(JSON.generate(job))
-          @output.gets
-        rescue Errno::EPIPE, IOError
-          nil
+        reap_if_dead
+        fresh = @pid.nil?
+        start if fresh
+        line = exchange(job)
+        # A worker that was already running may have died while idle: run
+        # the job once more on a new one. A job that kills a new worker
+        # fails.
+        unless line || fresh
+          stop
+          start
+          line = exchange(job)
         end
         return parse(line) if line
 
@@ -85,6 +90,26 @@ module Jekyll
       end
 
       private
+
+      # The job's reply line, or nil if the worker is gone.
+      def exchange(job)
+        @input.puts(JSON.generate(job))
+        @output.gets
+      rescue Errno::EPIPE, IOError
+        nil
+      end
+
+      # A worker that died while idle (killed during a long `jekyll serve`)
+      # is replaced before the next job.
+      def reap_if_dead
+        return unless @pid && Process.wait2(@pid, Process::WNOHANG)
+
+        @pid = nil
+        @input.close unless @input.closed?
+        @output.close unless @output.closed?
+      rescue Errno::ECHILD
+        @pid = nil
+      end
 
       def start
         child_in, @input = IO.pipe

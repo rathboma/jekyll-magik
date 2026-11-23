@@ -6,12 +6,21 @@ require "minitest/autorun"
 require "minitest/mock"
 require "fileutils"
 require "json"
+require "open3"
+require "rbconfig"
 require "tmpdir"
 require "zlib"
 require "jekyll"
 require "jekyll-magik"
 
 Jekyll.logger.log_level = :error
+
+# libvips brings the system's libxml2 with it, and Nokogiri (html_test.rb)
+# then sees that one. Tests that need libvips run it in another process
+# (ruby_subprocess, pixels), as Jekyll's own process does.
+Minitest.after_run do
+  abort "a test loaded libvips into the test process: use ruby_subprocess" if defined?(Vips)
+end
 
 module MagikTestHelper
   FIXTURE = File.expand_path("fixtures/site", __dir__)
@@ -86,6 +95,28 @@ module MagikTestHelper
       site.reset
       site
     end
+  end
+
+  LIB = File.expand_path("../lib", __dir__)
+
+  # Runs Ruby code in a new process, with jekyll-magik's lib on the load
+  # path and the bundle (and so ruby-vips) available. Returns its stdout.
+  def ruby_subprocess(code, *args)
+    out, err, status = Open3.capture3(RbConfig.ruby, "-I", LIB, "-e", code, *args)
+    assert status.success?, err
+    out
+  end
+
+  # An image's size, average and the first band's value at some points, read
+  # by libvips in another process.
+  def pixels(path, points = [])
+    JSON.parse(ruby_subprocess(<<~RUBY, path, JSON.generate(points)))
+      require "json"
+      require "vips"
+      image = Vips::Image.new_from_file(ARGV[0])
+      values = JSON.parse(ARGV[1]).map { |x, y| image.getpoint(x, y)[0] }
+      print JSON.generate("size" => [image.width, image.height], "avg" => image.avg, "points" => values)
+    RUBY
   end
 
   # A real PNG of that size, its pixels from `seed`, so that different seeds

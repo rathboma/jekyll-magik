@@ -14,6 +14,9 @@ module Jekyll
     #
     # A job (a Hash from JSON) has:
     #   source, source_size, source_mtime_ns   the image and its stat when it was digested
+    #   source_width, source_height            its size as the parent read it (FastImage)
+    #   autorotate  whether to turn it upright by its EXIF orientation: JPEGs
+    #               only, the only type whose FastImage size is upright
     #   steps     Transform#steps: [["resize", w, h], ["crop", x, y, w, h], ...]
     #   format    "jpg", "png" or "webp"
     #   quality   for jpg and webp
@@ -29,11 +32,17 @@ module Jekyll
     # tests against ImageMagick); any change to the bytes it writes for an
     # existing transform bumps PIPELINE_VERSION.
     module Pipeline
+      # Jobs never share operations, and libvips caches loads by file name:
+      # a file changed during `jekyll serve` would come back with its old
+      # pixels, to be stored under its new digest.
+      Vips.cache_set_max(0)
+
       module_function
 
       # Returns { "width", "height", "bytes" } of the object written.
       def run(job)
         check_source!(job)
+        check_size!(job)
         image = transform(job)
         tmp = job.fetch("tmp")
         output = job.fetch("output")
@@ -42,16 +51,28 @@ module Jekyll
           save(image, tmp, job.fetch("format"), job["quality"])
           check_source!(job)
           File.chmod(0o444, tmp)
-          FileUtils.mkdir_p(File.dirname(output))
-          File.rename(tmp, output)
+          place(tmp, output)
         ensure
           FileUtils.rm_f(tmp)
         end
         { "width" => image.width, "height" => image.height, "bytes" => File.size(output) }
       end
 
+      # A full build's GC removes empty object directories, maybe just after
+      # this made one: make it again once.
+      def place(tmp, output)
+        FileUtils.mkdir_p(File.dirname(output))
+        File.rename(tmp, output)
+      rescue Errno::ENOENT
+        raise unless File.exist?(tmp)
+
+        FileUtils.mkdir_p(File.dirname(output))
+        File.rename(tmp, output)
+      end
+
       def transform(job)
         source = job.fetch("source")
+        rotate = job.fetch("autorotate")
         image = nil
         job.fetch("steps").each do |name, *args|
           case name
@@ -60,21 +81,37 @@ module Jekyll
             image = if image
                       image.thumbnail_image(width, height: height, size: :force)
                     else
-                      # Shrinks on load, and turns the image upright by its
-                      # EXIF orientation.
-                      Vips::Image.thumbnail(source, width, height: height, size: :force)
+                      # Shrinks on load.
+                      Vips::Image.thumbnail(source, width, height: height, size: :force, no_rotate: !rotate)
                     end
           when "crop"
-            image = (image || load(source)).crop(*args)
+            image = (image || load(source, rotate)).crop(*args)
           else
             raise ArgumentError, "unknown step #{name.inspect}"
           end
         end
-        image || load(source)
+        image || load(source, rotate)
       end
 
-      def load(source)
-        Vips::Image.new_from_file(source).autorot
+      def load(source, rotate)
+        image = Vips::Image.new_from_file(source)
+        rotate ? image.autorot : image
+      end
+
+      # The steps were computed for the size the parent read: libvips must
+      # see the same, or a forced resize would squash the image.
+      def check_size!(job)
+        header = Vips::Image.new_from_file(job.fetch("source"))
+        size = [header.width, header.height]
+        size.reverse! if job.fetch("autorotate") && orientation(header) >= 5
+        expected = [job.fetch("source_width"), job.fetch("source_height")]
+        return if size == expected
+
+        raise "libvips reads #{job["source"]} as #{size.join("x")}, not #{expected.join("x")}"
+      end
+
+      def orientation(image)
+        image.get_typeof("orientation").zero? ? 1 : image.get("orientation").to_i
       end
 
       def save(image, path, format, quality)
