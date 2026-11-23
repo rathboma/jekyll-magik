@@ -73,6 +73,17 @@ module Jekyll
           new(ops: ops, **settings)
         end
 
+        # The Transform whose `to_h` this is (from the page map), or nil if
+        # it isn't one.
+        def from_h(hash)
+          magick = hash.fetch("ops").to_h { |name, value| [name.to_sym, value] }
+          magick.merge!(hash.slice("gravity", "quality", "format").transform_keys(&:to_sym))
+          transform = parse(magick)
+          transform if transform.to_h == hash
+        rescue Error, KeyError, TypeError, ArgumentError, NoMethodError
+          nil
+        end
+
         private
 
         def check_key!(key, value)

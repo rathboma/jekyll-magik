@@ -162,9 +162,10 @@ Mirror:
 Intended differences, documented in the README:
 - convert non-sRGB profiles to sRGB before stripping (only when the profile
   isn't already sRGB)
-- autorotate by EXIF, JPEGs only: FastImage (which sizes every URL) turns
-  only JPEG sizes upright, so a PNG or WebP with an EXIF orientation keeps
-  its stored one, as ImageMagick leaves it
+- autorotate by EXIF, exactly where FastImage (which sizes every URL) turns
+  the size upright: JPEGs, judged by content, not by extension. A PNG or
+  WebP with an EXIF orientation keeps its stored one, as ImageMagick leaves
+  it
 - `jpeg_quality` (82) instead of reusing the source's quality
 - flatten alpha onto white for JPEG
 - no `integrity` on derivatives by default
@@ -283,7 +284,9 @@ checks.
   `PIPELINE_VERSION`. Because `size: :force` would squash any image into the
   predicted box, the worker first checks that libvips reads the source at
   the size the parent predicted from (`source_width`/`source_height`, after
-  rotation, which is JPEG-only: `autorotate`), and the parent checks every
+  rotation, which follows FastImage's: `autorotate` is `Source#orientation >
+  1`; `thumbnail_image` never rotates, since a load already did), and the
+  parent checks every
   reply's size and deletes an object of the wrong size. Loading `pipeline.rb`
   turns off libvips' operation cache (`Vips.cache_set_max(0)`), in workers
   and with `workers: 0`: it caches loads by file name, so a file changed
@@ -310,10 +313,13 @@ checks.
 - The page map (`Api#after_render`, at `:site, :post_render`): every page
   rendered this build records its assets (`["o", logical, path]` or `["d",
   path, logical, canonical]`, even when empty); in an incremental build, every
-  page the regenerator skipped gets its recorded assets used again. If a
-  skipped page has no record, or a recorded file is gone, the build falls
-  back to #1's keep-everything rule (`keep_on_incremental?`). Pages are keyed
-  by their absolute source path, the way the regenerator keys them
+  page the regenerator skipped gets its recorded assets used again. A
+  recorded object that is missing or damaged (`Store#intact?`) is made again
+  from its logical path and transform (`Transform.from_h`). If a skipped page
+  has no record, a record is malformed, or making it again gives another URL
+  (the source changed), the build falls back to #1's keep-everything rule
+  (`keep_on_incremental?`). Pages are keyed by their absolute source path,
+  the way the regenerator keys them
 - Tests never write into `test/fixtures/site`: `fixture_site` and tests that
   build on the fixture itself use a temp `cache_dir` and
   `disable_disk_cache`. `test/fixtures/site/resized.html` has the four kinds

@@ -193,7 +193,7 @@ module Jekyll
           "source_mtime_ns" => (mtime.to_i * 1_000_000_000) + mtime.nsec,
           "source_width" => source.width,
           "source_height" => source.height,
-          "autorotate" => source.content_type == "image/jpeg",
+          "autorotate" => source.orientation > 1,
           "steps" => derivative.transform.steps(*source.dimensions),
           "format" => derivative.ext,
           "quality" => derivative.quality,

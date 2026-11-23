@@ -94,10 +94,15 @@ module Jekyll
       # [width, height] in pixels, from the file's header. A JPEG's are after
       # its EXIF rotation.
       def dimensions
-        @dimensions ||= begin
-          info = memo&.source_info(filename, stat)
-          info&.key?("width") ? info.values_at("width", "height") : read_dimensions
-        end
+        header.first(2)
+      end
+
+      # The EXIF orientation FastImage applied to `dimensions` (1 when it
+      # applied none). FastImage reads it from the content, for JPEGs (and
+      # TIFFs) only, so a transform rotates exactly the images whose size it
+      # predicted upright.
+      def orientation
+        header[2]
       end
 
       def width
@@ -114,12 +119,21 @@ module Jekyll
 
       private
 
-      def read_dimensions
+      # [width, height, orientation], from the memo or the file's header.
+      def header
+        @header ||= begin
+          info = memo&.source_info(filename, stat)
+          info&.key?("orientation") ? info.values_at("width", "height", "orientation").freeze : read_header
+        end
+      end
+
+      def read_header
         image = FastImage.new(filename, raise_on_failure: true)
-        size = image.size
-        memo&.remember_source(filename, stat,
-                              "width" => size[0], "height" => size[1], "type" => image.type.to_s)
-        size
+        width, height = image.size
+        orientation = image.orientation || 1
+        memo&.remember_source(filename, stat, "width" => width, "height" => height,
+                                              "orientation" => orientation, "type" => image.type.to_s)
+        [width, height, orientation].freeze
       rescue FastImage::FastImageException => e
         raise Error,
               "can't read the size of #{logical_path} (#{filename}): #{e.class.name.split("::").last}"

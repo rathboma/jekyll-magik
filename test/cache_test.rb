@@ -297,6 +297,24 @@ class CacheTest < Minitest::Test
     refute_equal base[:jpg], jpeg[:jpg]
   end
 
+  # An incremental build doesn't publish a damaged object for a page it
+  # skips: it makes the image again.
+  def test_an_incremental_build_remakes_a_damaged_object_of_a_skipped_page
+    _, dir = build(config: { "incremental" => true })
+    url = element(read_output(dir, "resized.html"), "poster")
+    object = object_for(dir, url)
+    good = File.binread(object)
+    File.unlink(object)
+    File.binwrite(object, good.byteslice(0, good.bytesize - 20))
+    write_index(dir, index(dir).except(derivative_parts(url)[2]))
+    File.unlink(File.join(dir, "_site", url))
+
+    site = rebuild(dir, "incremental" => true)
+    assert_equal 1, counts(site)[:processed]
+    assert_equal good, File.binread(object)
+    assert_equal good, File.binread(File.join(dir, "_site", url))
+  end
+
   def test_a_malformed_page_map_falls_back_to_keeping_every_file
     _, dir = build(config: { "incremental" => true })
     files = Dir.glob(File.join(dir, "_site/assets/**/*")).select { |f| File.file?(f) }

@@ -104,11 +104,15 @@ module Jekyll
       def reap_if_dead
         return unless @pid && Process.wait2(@pid, Process::WNOHANG)
 
+        discard
+      rescue Errno::ECHILD
+        discard
+      end
+
+      def discard
         @pid = nil
         @input.close unless @input.closed?
         @output.close unless @output.closed?
-      rescue Errno::ECHILD
-        @pid = nil
       end
 
       def start

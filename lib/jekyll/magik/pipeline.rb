@@ -15,8 +15,8 @@ module Jekyll
     # A job (a Hash from JSON) has:
     #   source, source_size, source_mtime_ns   the image and its stat when it was digested
     #   source_width, source_height            its size as the parent read it (FastImage)
-    #   autorotate  whether to turn it upright by its EXIF orientation: JPEGs
-    #               only, the only type whose FastImage size is upright
+    #   autorotate  whether to turn it upright by its EXIF orientation: when
+    #               FastImage did (Source#orientation), which it does for JPEGs
     #   steps     Transform#steps: [["resize", w, h], ["crop", x, y, w, h], ...]
     #   format    "jpg", "png" or "webp"
     #   quality   for jpg and webp
@@ -79,7 +79,8 @@ module Jekyll
           when "resize"
             width, height = args
             image = if image
-                      image.thumbnail_image(width, height: height, size: :force)
+                      # Already upright, if it's to be: load rotated it.
+                      image.thumbnail_image(width, height: height, size: :force, no_rotate: true)
                     else
                       # Shrinks on load.
                       Vips::Image.thumbnail(source, width, height: height, size: :force, no_rotate: !rotate)

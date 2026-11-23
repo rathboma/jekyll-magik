@@ -73,26 +73,35 @@ class WorkerTest < Minitest::Test
   # FastImage turns only JPEGs upright, so only JPEGs are rotated: a PNG or
   # WebP keeps its stored orientation instead of being rotated and then
   # squashed into the size predicted from the unrotated one.
+  #
+  # Whether to rotate follows FastImage, which reads the content: a JPEG
+  # named .png is rotated too.
   def test_only_jpegs_are_turned_upright
     files = %w(png webp jpg).to_h { |ext| ["_assets/img/rotated.#{ext}", File.binread("#{ORIENTATION}/rotated.#{ext}")] }
+    files["_assets/img/mislabeled.png"] = File.binread("#{ORIENTATION}/rotated.jpg")
     site = site_for(fixture_copy(files))
     site.reset
-    out = %w(png webp jpg).to_h do |ext|
-      url = render(%({% asset rotated.#{ext} magick:resize='20x' magick:format='webp' @path %}), site: site)
-      dkey = url[/\h{64}(?=\.webp\z)/]
-      [ext, File.join(site.magik.store.objects_dir, dkey[0, 2], "#{dkey}.webp")]
+    object = lambda do |tag|
+      dkey = render(tag, site: site)[/\h{64}(?=\.webp\z)/]
+      File.join(site.magik.store.objects_dir, dkey[0, 2], "#{dkey}.webp")
     end
     %w(png webp).each do |ext|
-      image = pixels(out[ext], [[3, 7], [16, 7]])
-      assert_equal [20, 15], image["size"], ext
-      assert_operator image["points"][0], :<, 60, "#{ext}: the left half isn't black"
-      assert_operator image["points"][1], :>, 200, "#{ext}: the right half isn't white"
+      [%(magick:resize='20x'), %(magick:crop='40x30+0+0' magick:gravity='center' magick:resize='20x')].each do |args|
+        image = pixels(object.call(%({% asset rotated.#{ext} #{args} magick:format='webp' @path %})), [[3, 7], [16, 7]])
+        assert_equal [20, 15], image["size"], "#{ext} #{args}"
+        assert_operator image["points"][0], :<, 60, "#{ext} #{args}: the left half isn't black"
+        assert_operator image["points"][1], :>, 200, "#{ext} #{args}: the right half isn't white"
+      end
     end
-    # Rotated 90 degrees clockwise: the black half is on top.
-    image = pixels(out["jpg"], [[10, 3], [10, 23]])
-    assert_equal [20, 27], image["size"]
-    assert_operator image["points"][0], :<, 60
-    assert_operator image["points"][1], :>, 200
+    # Rotated 90 degrees clockwise: the black half is on top. (Other widths,
+    # or the two would share one object: they have the same bytes.)
+    { "rotated.jpg" => 20, "mislabeled.png" => 22 }.each do |name, width|
+      image = pixels(object.call(%({% asset #{name} magick:resize='#{width}x' magick:format='webp' @path %})),
+                     [[10, 3], [10, 25]])
+      assert_equal [width, (width * 4 / 3.0).round], image["size"], name
+      assert_operator image["points"][0], :<, 60, name
+      assert_operator image["points"][1], :>, 200, name
+    end
   end
 
   def test_a_source_libvips_reads_at_another_size_fails_the_job
@@ -100,7 +109,8 @@ class WorkerTest < Minitest::Test
     stat = File.stat(src)
     dir = Dir.mktmpdir
     (@tmpdirs ||= []) << dir
-    reply = Jekyll::Magik::Processor.new.run(
+    processor = Jekyll::Magik::Processor.new
+    reply = processor.run(
       "id" => "x", "source" => src, "source_size" => stat.size,
       "source_mtime_ns" => (stat.mtime.to_i * 1_000_000_000) + stat.mtime.nsec,
       "source_width" => 30, "source_height" => 40, "autorotate" => false,
@@ -110,15 +120,35 @@ class WorkerTest < Minitest::Test
     refute reply["ok"]
     assert_includes reply["error"], "libvips reads #{src} as 40x30, not 30x40"
     refute File.exist?(File.join(dir, "x.png"))
+  ensure
+    processor&.stop
   end
 
-  def test_a_worker_that_died_while_idle_is_replaced
+  # Killed just before a job, it fails that job's exchange: the job runs
+  # again on a new worker.
+  def test_a_worker_that_dies_just_before_a_job_is_replaced
     processor = Jekyll::Magik::Processor.new
     assert_equal false, processor.run("id" => "a", "source" => "/nope.png")["ok"]
     dead = processor.pid
     Process.kill(:KILL, dead)
     assert_equal false, processor.run("id" => "b", "source" => "/nope.png")["ok"]
     refute_equal dead, processor.pid
+  ensure
+    processor&.stop
+  end
+
+  # Dead well before the next job, it's found before the job is sent.
+  def test_a_worker_that_died_while_idle_is_found_before_the_next_job
+    processor = Jekyll::Magik::Processor.new
+    processor.run("id" => "a", "source" => "/nope.png")
+    Process.kill(:KILL, processor.pid)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
+    until processor.pid.nil? || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+      processor.send(:reap_if_dead)
+      sleep(0.01)
+    end
+    assert_nil processor.pid
+    assert_equal false, processor.run("id" => "b", "source" => "/nope.png")["ok"]
   ensure
     processor&.stop
   end

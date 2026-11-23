@@ -86,6 +86,20 @@ module Jekyll
         @index[dkey] = { "ext" => ext, "bytes" => stat.size, "width" => width, "height" => height }
       end
 
+      # Whether an object can be used as it is, its expected size unknown (an
+      # incremental build restoring a page's assets): it matches its index
+      # entry, or with none, it's whole.
+      def intact?(dkey, ext)
+        path = object_path(dkey, ext)
+        stat = file_stat(path)
+        return false unless stat
+
+        entry = @index[dkey]
+        return entry["ext"] == ext && entry["bytes"] == stat.size if entry
+
+        complete?(path, ext, stat.size)
+      end
+
       # Records an object a worker has just written.
       def record(dkey, ext:, bytes:, width:, height:)
         @checked << dkey

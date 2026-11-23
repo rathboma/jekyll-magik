@@ -315,9 +315,9 @@ module Jekyll
         return false unless match
 
         dkey, ext = match.captures
-        object = store.object_path(dkey, ext)
-        return false unless File.file?(object)
+        return rederive(path, logical_path, canonical) unless store.intact?(dkey, ext)
 
+        object = store.object_path(dkey, ext)
         store.use(dkey)
         dest_path = config.dest_path_for(path)
         return true if @used.key?(dest_path)
@@ -326,6 +326,19 @@ module Jekyll
                                         canonical: canonical, dkey: dkey, ext: ext)
         site.static_files << DerivativeFile.new(site, dest_path, object) if @write_files
         true
+      end
+
+      # A restored derivative whose object is missing or damaged, made again
+      # from its source and transform. True if that gives the URL the
+      # skipped page has: its source hasn't changed.
+      def rederive(path, logical_path, canonical)
+        source = lookup(logical_path)
+        transform = Transform.from_h(JSON.parse(canonical))
+        return false unless source && transform
+
+        derive(source, transform).path == path
+      rescue Error, JSON::ParserError
+        false
       end
 
       def summary(gc_result)
