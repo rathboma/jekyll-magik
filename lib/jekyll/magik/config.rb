@@ -31,7 +31,11 @@ module Jekyll
         "cdn" => ->(v) { v.is_a?(Hash) ? !blank?(v["url"]) : !blank?(v) },
         "precompile" => ->(v) { !Array(v).empty? },
         "raw_precompile" => ->(v) { !Array(v).empty? },
-        "gzip" => ->(v) { v == true }
+        "gzip" => ->(v) { v == true },
+        # srcsets on every <img>
+        "responsive" => ->(v) { v.is_a?(Hash) && (v["automatic"] || v["discovery"]) ? true : false },
+        # rewrites <img asset> elements in pages
+        "plugins" => ->(v) { v.is_a?(Hash) && v["img"].is_a?(Hash) && v["img"]["searcher"] ? true : false }
       }.freeze
 
       attr_reader :source, :sources, :load_paths, :destination, :baseurl, :img_integrity,
@@ -149,6 +153,7 @@ module Jekyll
         @webp_quality = integer_option(magik, "webp_quality", DEFAULT_WEBP_QUALITY, 1..100)
         @derivative_integrity = boolean_option(magik, "derivative_integrity", false)
         @manifest = boolean_option(magik, "manifest", false)
+        @warnings << "`magik: manifest` isn't implemented yet, so no manifest is written" if @manifest
       end
 
       def read_gc(value)

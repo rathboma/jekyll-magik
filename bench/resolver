@@ -26,6 +26,7 @@ FILES = %w(
   _assets/img/both.png _assets/both.png _assets/fonts/x.woff2
   _assets/img/odd.psd assets/images/legacy.png img/root.png _assets/images/later.png
   custom/first.png custom/img/z.png _assets/img/z.png _assets/videos/clip.mp4
+  _assets/img/only/index.png _assets/img/lib-abcdef1.digested.png
 ).freeze
 
 NAMES = %w(
@@ -33,6 +34,7 @@ NAMES = %w(
   blog/q3/chart img/blog/q3/chart release-1.0 g.min g.min.png v1.0/h dir dir/index dir/index.png
   .hidden.png backup x.woff2 both.png img/both.png legacy.png root.png later.png z.png img/z.png first.png
   clip.mp4 videos/clip.mp4 clip nope.png img/nope odd home/sub.png
+  only only.png img/only only/index only/index.png lib-abcdef1.digested.png lib-abcdef1.digested
 ).freeze
 
 SOURCES = [

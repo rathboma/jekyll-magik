@@ -73,6 +73,41 @@ class TagTest < Minitest::Test
     assert_equal(1, site.static_files.count { |f| f.is_a?(Jekyll::Magik::AssetFile) })
   end
 
+  def test_a_tag_that_raises_marks_nothing_used
+    site = site_for(fixture_copy)
+    site.reset
+    assert_raises(Jekyll::Magik::NotSupported) { render(%({% asset clip.mp4 %}), site: site) }
+    assert_raises(Jekyll::Magik::NotSupported) { render(%({% asset logo.png @inline %}), site: site) }
+    assert_empty site.magik.used
+    assert_empty site.static_files.grep(Jekyll::Magik::AssetFile)
+  end
+
+  def test_dependencies_of_tags_filters_and_collection_documents
+    dir = fixture_copy("my_collections/_posts/2020-01-01-a.md" => "---\n---\n")
+    site = site_for(dir, "incremental" => true, "collections_dir" => "my_collections")
+    site.reset
+    page = File.join(dir, "index.html")
+    doc = File.join(dir, "my_collections/_posts/2020-01-01-a.md")
+    [page, doc].each { |p| site.regenerator.add(p) }
+    render(%({{ "photo.jpg" | asset_size | join: "x" }}), site: site)
+    render(%({% asset logo.png @path %}), site: site, path: "_posts/2020-01-01-a.md",
+                                          assigns: { "collection" => "posts" })
+    assert_includes site.regenerator.metadata[page]["deps"], File.join(dir, "_assets/img/photo.jpg")
+    assert_includes site.regenerator.metadata[doc]["deps"], File.join(dir, "_assets/img/logo.png")
+  end
+
+  def test_a_url_outside_the_digest_grammar_warns
+    dir = fixture_copy("_assets/img/sp ace.png" => "x")
+    site = site_for(dir)
+    site.reset
+    warnings = []
+    Jekyll.logger.stub(:warn, ->(*args) { warnings << args.join(" ") }) do
+      render(%({% asset 'sp ace.png' @path %}{% asset logo.png @path %}), site: site)
+    end
+    assert_equal 1, warnings.size
+    assert_includes warnings[0], "/assets/img/sp ace-"
+  end
+
   def test_regenerator_dependency
     dir = fixture_copy
     site = site_for(dir, "incremental" => true)

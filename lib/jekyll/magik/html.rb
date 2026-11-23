@@ -15,8 +15,14 @@ module Jekyll
     #   it's single-quoted. With both, `"` becomes `&quot;`
     # - `src`, `href` and `action` are URIs: leading whitespace is dropped,
     #   and whitespace, DEL and non-ASCII bytes are percent-encoded
+    # - HTML 4's boolean attributes (`ismap`, `disabled`, ...) are written as
+    #   a bare name, whatever their value
     module Html
       URI_ATTRIBUTES = %w(src href action).freeze
+      # libxml2's htmlIsBooleanAttr.
+      BOOLEAN_ATTRIBUTES = %w(
+        checked compact declare defer disabled ismap multiple nohref noresize noshade nowrap readonly selected
+      ).freeze
       DROPPED = /[\x01-\x08\x0B\x0C\x0E-\x1F]/
       URI_ESCAPED = /[\x00-\x20\x7F]|[^\x00-\x7F]/
       ENTITIES = { "&" => "&amp;", "<" => "&lt;", ">" => "&gt;" }.freeze
@@ -35,6 +41,8 @@ module Jekyll
         name = name.to_s
         value = value.to_s
         raise Error, "an attribute value can't contain a NUL byte (#{name})" if value.include?("\0")
+
+        return name if BOOLEAN_ATTRIBUTES.include?(name.downcase)
 
         value = value.gsub(DROPPED, "")
         value = uri_escape(value.sub(/\A[ \t\n\r]+/, "")) if URI_ATTRIBUTES.include?(name.downcase)

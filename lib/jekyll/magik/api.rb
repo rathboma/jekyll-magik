@@ -12,6 +12,15 @@ module Jekyll
     # `find`, `find!` and `url` mark the asset used, so it's written to _site
     # even when no tag refers to it (social images in meta tags, JSON-LD).
     class Api
+      # The shape of a digested asset path that beekeeper-studio/web's
+      # translation Worker and IndexNow recognise (DIGESTED in
+      # workers/translate/src/assets.ts): ASCII word characters, `.`, `/` and
+      # `-`, the digest in lowercase hex, and a lowercase extension.
+      DIGESTED_PATH = %r{\A[\w./-]+?-[0-9a-f]{64,128}\.[a-z0-9]+\z}
+      # The names jekyll-magik writes: digested originals, and names
+      # sprockets considers digested already.
+      OUTPUT_NAME = /-(?:\h{128}\.[^.\/]+|[0-9a-zA-Z]{7,128}\.digested)/
+
       attr_reader :site, :config
 
       # write_files: false keeps used assets out of site.static_files (the
@@ -59,11 +68,43 @@ module Jekyll
       # Marks a source used in this build: Jekyll writes it to _site with the
       # site's other static files, and regenerates the page when it changes.
       def use(source, page: nil)
-        add_dependency(page, source)
+        depend(page, source)
         return if @used.key?(source.dest_path)
 
         @used[source.dest_path] = source
+        warn_outside_grammar(source)
         site.static_files << AssetFile.new(site, source) if @write_files
+      end
+
+      # Regenerates the page when the source changes (incremental builds and
+      # `jekyll serve`), keyed the way Jekyll's include tag keys pages.
+      def depend(page, source)
+        path = page && page["path"]
+        return unless path && site.regenerator
+
+        page_path = if page["collection"]
+                      site.in_source_dir(site.config["collections_dir"], path)
+                    else
+                      site.in_source_dir(path)
+                    end
+        site.regenerator.add_dependency(page_path, source.filename)
+      end
+
+      # Whether an incremental build should leave a file in _site that no
+      # rendered page used this time: one of jekyll-magik's, in the asset
+      # destination. See CleanerMethods.
+      # Directories go too: the cleaner deletes a directory with everything
+      # in it, so the destination, the directories above it and the ones in it
+      # are kept (their other obsolete files are listed, and deleted, one by
+      # one).
+      def keep_on_incremental?(path)
+        root = site.in_dest_dir(config.destination.to_s)
+        inside = path.start_with?(File.join(root, ""))
+        if File.directory?(path)
+          inside || path == root || root.start_with?(File.join(path, ""))
+        else
+          inside && File.basename(path).match?(OUTPUT_NAME)
+        end
       end
 
       # The sources used so far in this build.
@@ -73,11 +114,15 @@ module Jekyll
 
       private
 
-      def add_dependency(page, source)
-        path = page && page["path"]
-        return unless path && site.regenerator
+      # Translated pages and IndexNow key text by asset URLs with their
+      # digest taken out; a URL they can't parse makes them see new text.
+      # jekyll-assets served such names, so this only warns.
+      def warn_outside_grammar(source)
+        return if DIGESTED_PATH.match?(source.digest_path)
 
-        site.regenerator.add_dependency(site.in_source_dir(path), source.filename)
+        Jekyll.logger.warn("jekyll-magik:", "#{source.url} (#{source.filename}) isn't of the form " \
+                                            "<name>-<digest>.<ext> with only letters, digits, _ . / - " \
+                                            "and a lowercase extension")
       end
 
       def in_page(page)

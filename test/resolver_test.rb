@@ -21,6 +21,7 @@ class ResolverTest < Minitest::Test
       _assets/img/noext _assets/img/odd.psd
       assets/images/legacy.png img/root.png _assets/images/later.png
       custom/first.png custom/img/z.png _assets/img/z.png
+      _assets/img/only/index.png _assets/img/lib-abcdef1.digested.png
     )
     files.each do |f|
       path = File.join(@dir, f)
@@ -75,6 +76,24 @@ class ResolverTest < Minitest::Test
     assert_equal "img/dir.png", find("dir")[0]
     assert_equal "img/dir/index.png", find("dir/index")[0]
     assert_equal "img/dir/index.png", find("dir/index.png")[0]
+  end
+
+  # Sprockets' index alias: found by the directory's name, an index file is
+  # named after the directory.
+  def test_an_index_file_found_by_its_directory_takes_its_name
+    assert_equal ["img/only.png", "_assets/img/only/index.png", "image/png"], find("only")
+    assert_equal ["img/only.png", "_assets/img/only/index.png", "image/png"], find("only.png")
+    assert_equal ["img/only.png", "_assets/img/only/index.png", "image/png"], find("img/only")
+    assert_equal ["img/only/index.png", "_assets/img/only/index.png", "image/png"], find("only/index.png")
+    digest = Digest::SHA512.hexdigest("_assets/img/only/index.png")
+    assert_equal "/assets/img/only-#{digest}.png", resolver.find("only").url
+    assert_equal "/assets/img/only/index-#{digest}.png", resolver.find("only/index").url
+  end
+
+  def test_names_sprockets_takes_as_digested_get_no_digest
+    source = resolver.find("lib-abcdef1.digested.png")
+    assert_equal "img/lib-abcdef1.digested.png", source.digest_path
+    assert_equal "/assets/img/lib-abcdef1.digested.png", source.url
   end
 
   def test_directories_and_hidden_backup_and_unregistered_files_are_skipped

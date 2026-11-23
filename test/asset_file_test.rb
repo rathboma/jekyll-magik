@@ -31,6 +31,14 @@ class AssetFileTest < Minitest::Test
     assert_empty Dir.glob(File.join(File.dirname(@dest), ".magik-*"))
   end
 
+  def test_refuses_a_source_that_changed_after_it_was_digested
+    @source.url
+    File.write(@file.path, "changed during the build")
+    error = assert_raises(Jekyll::Magik::Error) { @file.write(@site.dest) }
+    assert_includes error.message, "changed during the build"
+    refute File.exist?(@dest)
+  end
+
   def test_skips_a_destination_that_is_already_the_copy
     @file.write(@site.dest)
     inode = File.stat(@dest).ino

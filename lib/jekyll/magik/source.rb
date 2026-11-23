@@ -36,9 +36,13 @@ module Jekyll
         stat.mtime
       end
 
-      # The SHA-512 of the file, hex.
+      # The SHA-512 of the file, hex. The file's stat is taken first, so that
+      # AssetFile can tell if it changed before it was copied.
       def digest
-        @digest ||= Digest::SHA512.file(filename).hexdigest
+        @digest ||= begin
+          stat
+          Digest::SHA512.file(filename).hexdigest
+        end
       end
 
       # Subresource integrity, as sprockets writes it.
@@ -46,9 +50,22 @@ module Jekyll
         "sha512-#{[[digest].pack("H*")].pack("m0")}"
       end
 
-      # The logical path with the digest before the extension.
+      # Names sprockets takes to carry a digest already (`lib-1a2b3c4.digested.js`).
+      ALREADY_DIGESTED = /-([0-9a-zA-Z]{7,128})\.digested/
+
+      # The logical path with the digest before the extension, unless the
+      # name already has one.
       def digest_path
-        @digest_path ||= logical_path.sub(/\.(\w+)\z/) { |ext| "-#{digest}#{ext}" }
+        @digest_path ||= if name.match?(ALREADY_DIGESTED)
+                           logical_path
+                         else
+                           logical_path.sub(/\.(\w+)\z/) { |ext| "-#{digest}#{ext}" }
+                         end
+      end
+
+      # The logical path without its extension, sprockets' `name`.
+      def name
+        logical_path.delete_suffix(Mime.extname(logical_path)&.first.to_s)
       end
 
       def url

@@ -39,11 +39,12 @@ module Jekyll
 
         args = plan.render_args(context)
         source = find(args[:argv1], plan, page)
+        check_mode!(plan.mode, source)
         @api.use(source, page: page)
         case plan.mode
         when :path then source.url
-        when :inline then inline(source, plan, args, page)
-        else img(source, plan, args, page)
+        when :inline then inline(source, plan, args)
+        else img(source, plan, args)
         end
       rescue Error => e
         raise e if e.message.include?(plan.tag)
@@ -58,11 +59,20 @@ module Jekyll
         @api.lookup(name) || raise(UnknownAsset, "Unknown asset '#{name}'#{in_page(page)} (#{plan.tag})")
       end
 
-      def img(source, plan, args, _page)
-        unless Mime::IMG_TYPES.include?(source.content_type)
-          raise NotSupported, "#{source.content_type} assets can only be used with `@path`"
+      # Before the asset is used: a tag that raises mustn't write a file (or,
+      # later, start resizing one).
+      def check_mode!(mode, source)
+        case mode
+        when :inline
+          raise NotSupported, "`@inline` only supports SVG files" unless source.svg?
+        when :img
+          unless Mime::IMG_TYPES.include?(source.content_type)
+            raise NotSupported, "#{source.content_type} assets can only be used with `@path`"
+          end
         end
+      end
 
+      def img(source, plan, args)
         attributes = plan.attributes(args)
         set(attributes, :src, source.url)
         if @api.config.img_integrity && !args.key?(:integrity)
@@ -72,9 +82,7 @@ module Jekyll
         Html.img(attributes)
       end
 
-      def inline(source, plan, args, _page)
-        raise NotSupported, "`@inline` only supports SVG files" unless source.svg?
-
+      def inline(source, plan, args)
         Svg.inline(File.binread(source.filename), plan.attributes(args), filename: source.filename)
       end
 

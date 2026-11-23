@@ -9401,6 +9401,942 @@
     {
       "attributes": [
         [
+          "checked",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img checked src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "checked",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img checked src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "checked",
+          "checked"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img checked src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "checked",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img checked src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "compact",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img compact src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "compact",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img compact src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "compact",
+          "compact"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img compact src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "compact",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img compact src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "declare",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img declare src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "declare",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img declare src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "declare",
+          "declare"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img declare src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "declare",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img declare src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "defer",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img defer src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "defer",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img defer src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "defer",
+          "defer"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img defer src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "defer",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img defer src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "disabled",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img disabled src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "disabled",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img disabled src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "disabled",
+          "disabled"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img disabled src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "disabled",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img disabled src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "ismap",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img ismap src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "ismap",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img ismap src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "ismap",
+          "ismap"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img ismap src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "ismap",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img ismap src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "multiple",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img multiple src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "multiple",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img multiple src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "multiple",
+          "multiple"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img multiple src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "multiple",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img multiple src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "nohref",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img nohref src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "nohref",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img nohref src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "nohref",
+          "nohref"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img nohref src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "nohref",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img nohref src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "noresize",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img noresize src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "noresize",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img noresize src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "noresize",
+          "noresize"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img noresize src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "noresize",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img noresize src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "noshade",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img noshade src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "noshade",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img noshade src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "noshade",
+          "noshade"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img noshade src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "noshade",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img noshade src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "nowrap",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img nowrap src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "nowrap",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img nowrap src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "nowrap",
+          "nowrap"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img nowrap src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "nowrap",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img nowrap src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "readonly",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img readonly src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "readonly",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img readonly src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "readonly",
+          "readonly"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img readonly src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "readonly",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img readonly src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "selected",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img selected src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "selected",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img selected src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "selected",
+          "selected"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img selected src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "selected",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img selected src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "ISMAP",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img ISMAP src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "ISMAP",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img ISMAP src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "ISMAP",
+          "ISMAP"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img ISMAP src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "ISMAP",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img ISMAP src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "Disabled",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img Disabled src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "Disabled",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img Disabled src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "Disabled",
+          "Disabled"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img Disabled src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "Disabled",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img Disabled src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "usemap",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img usemap=\"\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "usemap",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img usemap=\"x y\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "usemap",
+          "usemap"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img usemap=\"usemap\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "usemap",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img usemap='a\"b' src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "hidden",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img hidden=\"\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "hidden",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img hidden=\"x y\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "hidden",
+          "hidden"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img hidden=\"hidden\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "hidden",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img hidden='a\"b' src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "async",
+          ""
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img async=\"\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "async",
+          "x y"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img async=\"x y\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "async",
+          "async"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img async=\"async\" src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
+          "async",
+          "a\"b"
+        ],
+        [
+          "src",
+          "/a.png"
+        ]
+      ],
+      "html": "<img async='a\"b' src=\"/a.png\">"
+    },
+    {
+      "attributes": [
+        [
           "alt",
           "A"
         ],

@@ -4,6 +4,11 @@ source "https://rubygems.org"
 
 gemspec
 
+# CI also runs the tests on the oldest Jekyll the gemspec allows:
+# JEKYLL_VERSION="~> 4.3.0" bundle install
+jekyll_version = ENV.fetch("JEKYLL_VERSION", "")
+gem "jekyll", jekyll_version unless jekyll_version.empty?
+
 group :development, :test do
   # Jekyll 4.3 requires these, which stopped being default gems in Ruby 3.4.
   gem "base64"

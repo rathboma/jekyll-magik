@@ -39,7 +39,7 @@ class HtmlTest < Minitest::Test
                 "%", "#", "=", ";", "amp;", "/"]
     2_000.times do
       attributes = Array.new(rng.rand(1..3)) do |i|
-        name = %w(alt src href title class action)[rng.rand(6)] + (i.zero? ? "" : i.to_s)
+        name = %w(alt src href title class action ismap disabled)[rng.rand(8)] + (i.zero? ? "" : i.to_s)
         [name, Array.new(rng.rand(0..10)) { alphabet[rng.rand(alphabet.size)] }.join]
       end
       assert_equal nokogiri_img(attributes.to_h), Jekyll::Magik::Html.img(attributes), attributes.inspect

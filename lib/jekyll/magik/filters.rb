@@ -17,12 +17,17 @@ module Jekyll
         magik_api.find!(name.to_s, page: @context.registers[:page]).url
       end
 
-      # [width, height] in pixels. Doesn't mark the asset used.
+      # [width, height] in pixels. Doesn't mark the asset used, but the page
+      # is regenerated when the image changes.
       def asset_size(name)
-        source = magik_api.lookup(name.to_s)
+        api = magik_api
+        source = api.lookup(name.to_s)
         raise UnknownAsset, "Unknown asset '#{name}' (asset_size)#{magik_in_page}" unless source
-        raise NotSupported, "asset_size: #{source.logical_path} isn't an image" unless source.image?
+        unless source.image?
+          raise NotSupported, "asset_size: #{source.logical_path} isn't an image#{magik_in_page}"
+        end
 
+        api.depend(@context.registers[:page], source)
         source.dimensions
       end
 

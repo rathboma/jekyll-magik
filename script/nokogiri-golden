@@ -39,6 +39,12 @@ values.each do |v|
   %w(alt src href class data-x name).each { |name| add.call(name => v) }
 end
 
+# HTML 4's boolean attributes, which libxml2 writes as a bare name.
+%w(checked compact declare defer disabled ismap multiple nohref noresize noshade nowrap readonly selected
+   ISMAP Disabled usemap hidden async).each do |name|
+  ["", "x y", name, "a\"b"].each { |v| add.call(name => v, "src" => "/a.png") }
+end
+
 # Several attributes, in order, with the kinds of values the tag passes.
 add.call("alt" => "A", "class" => "c", "width" => 300, "height" => 1.5, "src" => "/assets/a.png",
          "integrity" => "sha512-abc+/=", "crossorigin" => "anonymous")

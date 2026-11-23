@@ -13,7 +13,9 @@ module Jekyll
     # - A name without an extension (`screenshots/main-dark`) matches any file
     #   with that name and a registered extension, and the first in sorted
     #   order wins (`edit-schema.jpg` before `edit-schema.png`). A directory's
-    #   `index` file comes after those.
+    #   `index` file comes after those, and is named like the directory:
+    #   `only/index.png` found as `only` is `img/only.png` (sprockets'
+    #   index alias), while `only/index.png` found by that name keeps it.
     # - The logical path is the file's path relative to the *first* load path
     #   that contains it: `blog/default.jpg` found in `_assets/img` is
     #   `img/blog/default.jpg` when `_assets` is a load path too.
@@ -22,7 +24,7 @@ module Jekyll
     # on first use, and every name's result is memoized, so a tag costs a
     # hash lookup after the first time its name is seen.
     class Resolver
-      Candidate = Struct.new(:filename, :type)
+      Candidate = Struct.new(:filename, :type, :index)
 
       attr_reader :config
 
@@ -81,17 +83,17 @@ module Jekyll
         dir = dirname == "." ? load_path : File.join(load_path, dirname)
         found = matches(dir, File.basename(logical_name))
         index_dir = File.join(load_path, logical_name)
-        found += matches(index_dir, "index") if listing(index_dir)
+        found += matches(index_dir, "index", index: true) if listing(index_dir)
         found
       end
 
-      def matches(dir, basename)
+      def matches(dir, basename, index: false)
         entries = listing(dir)&.fetch(basename, nil)
         return [] unless entries
 
         entries.filter_map do |entry, type|
           filename = File.join(dir, entry)
-          Candidate.new(filename, type) if file?(filename)
+          Candidate.new(filename, type, index) if file?(filename)
         end
       end
 
@@ -137,19 +139,19 @@ module Jekyll
       end
 
       def source_for(candidate)
-        @sources[candidate.filename] ||= begin
-          type = candidate.type
-          ext = Mime.extname(candidate.filename)&.first
-          raise NotSupported, Mime.unsupported_reason(type, ext || File.extname(candidate.filename)) \
-            unless type && Mime.passthrough?(type)
-
-          Source.new(
-            filename: candidate.filename,
-            logical_path: logical_path(candidate.filename),
-            content_type: type,
-            config: config
-          )
+        type = candidate.type
+        unless type && Mime.passthrough?(type)
+          ext = Mime.extname(candidate.filename)&.first || File.extname(candidate.filename)
+          raise NotSupported, Mime.unsupported_reason(type, ext)
         end
+
+        # Sprockets' index alias: a directory's index file found by the
+        # directory's name gets the directory's name.
+        path = candidate.index ? candidate.filename.sub(%r{/index(\.[^/]+)\z}, '\1') : candidate.filename
+        logical = logical_path(path)
+        @sources[[candidate.filename, logical]] ||= Source.new(
+          filename: candidate.filename, logical_path: logical, content_type: type, config: config
+        )
       end
 
       # Sprockets' PathUtils.paths_split over every configured load path.

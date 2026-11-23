@@ -14,8 +14,26 @@ module Jekyll
       end
     end
 
+    # An incremental build doesn't render the pages it skips, so their tags
+    # never mark their assets used, and Jekyll's cleaner would delete them
+    # while the pages that refer to them stay. Keep jekyll-magik's files in
+    # incremental builds, as jekyll-assets kept every file in its manifest.
+    # (#2's page → assets map makes this exact.)
+    module CleanerMethods
+      private
+
+      def obsolete_files
+        files = super
+        return files unless site.incremental? && site.respond_to?(:magik)
+
+        files.reject { |path| site.magik.keep_on_incremental?(path) }
+      end
+    end
+
+    # Only jekyll-assets itself, not any code that opens the namespace
+    # (beekeeper-studio/web's _plugins/stable_proxy_keys.rb does).
     def self.check_conflict!
-      raise Conflict, CONFLICT if defined?(Jekyll::Assets)
+      raise Conflict, CONFLICT if defined?(Jekyll::Assets::Env) || defined?(Jekyll::Assets::Tag)
 
       tag = Liquid::Template.tags["asset"]
       return if tag.nil? || tag == Jekyll::Magik::Tag
@@ -27,6 +45,7 @@ end
 
 Jekyll::Magik.check_conflict!
 Jekyll::Site.include(Jekyll::Magik::SiteMethods)
+Jekyll::Cleaner.prepend(Jekyll::Magik::CleanerMethods)
 Liquid::Template.register_tag("asset", Jekyll::Magik::Tag)
 Liquid::Template.register_filter(Jekyll::Magik::Filters)
 
@@ -39,4 +58,8 @@ end
 
 Jekyll::Hooks.register :site, :after_reset do |site|
   site.magik.reset!
+end
+
+Jekyll::Hooks.register :site, :pre_render do |_site, payload|
+  payload["assets"] ||= Jekyll::Magik::AssetsDrop.new
 end

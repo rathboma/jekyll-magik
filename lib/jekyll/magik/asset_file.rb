@@ -49,7 +49,9 @@ module Jekyll
         FileUtils.mkdir_p(File.dirname(dest_path))
         tmp = File.join(File.dirname(dest_path), ".magik-#{SecureRandom.hex(8)}.tmp")
         begin
+          check_unchanged!
           IO.copy_stream(source.filename, tmp)
+          check_unchanged!
           File.utime(source.stat.atime, source.mtime, tmp)
           File.rename(tmp, dest_path)
         ensure
@@ -70,6 +72,18 @@ module Jekyll
           !(dest.ino == src.ino && dest.dev == src.dev)
       rescue Errno::ENOENT, Errno::ENOTDIR
         false
+      end
+
+      # The file's name and integrity come from its digest, taken when a page
+      # first used it. If it was saved since (during `jekyll serve`), its new
+      # bytes mustn't go out under the old name: fail, and the rebuild the
+      # save triggers writes it under its new one.
+      def check_unchanged!
+        now = File.stat(source.filename)
+        was = source.stat
+        return if now.size == was.size && now.mtime == was.mtime && now.ino == was.ino
+
+        raise Error, "#{source.filename} changed during the build; build again"
       end
 
       def relative_source_path

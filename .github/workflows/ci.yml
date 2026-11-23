@@ -6,12 +6,19 @@ on:
 
 jobs:
   test:
-    name: Ruby ${{ matrix.ruby }}
+    name: Ruby ${{ matrix.ruby }}${{ matrix.jekyll && format(', Jekyll {0}', matrix.jekyll) || '' }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         ruby: ["3.2", "3.3", "3.4"]
+        jekyll: [""]
+        include:
+          # beekeeper-studio/web builds with Jekyll 4.3.
+          - ruby: "3.4"
+            jekyll: "~> 4.3.0"
+    env:
+      JEKYLL_VERSION: ${{ matrix.jekyll }}
     steps:
       - uses: actions/checkout@v4
 

@@ -123,6 +123,24 @@ class FixtureSiteTest < Minitest::Test
     refute File.exist?(File.join(@dir, "_site", old))
   end
 
+  # An incremental build skips unchanged pages, so their tags don't run; the
+  # cleaner mustn't delete their images.
+  def test_an_incremental_rebuild_keeps_the_assets_of_skipped_pages
+    _, dir = build(config: { "incremental" => true })
+    files = Dir.glob(File.join(dir, "_site/assets/**/*")).select { |f| File.file?(f) }
+    assert_equal 11, files.size
+    site_for(dir, "incremental" => true).process
+    files.each { |f| assert File.file?(f), "#{f} was deleted" }
+    html = read_output(dir)
+    html.scan(%r{/assets/[^"'\s<]+}).each { |u| assert File.file?(File.join(dir, "_site", u)), u }
+
+    # A full build still cleans up what nothing uses any more.
+    stale = File.join(dir, "_site/assets/img/stale-#{"a" * 128}.png")
+    File.write(stale, "x")
+    site_for(dir).process
+    refute File.exist?(stale)
+  end
+
   def test_baseurl
     site, dir = build(config: { "baseurl" => "/docs/" })
     html = read_output(dir)
@@ -172,6 +190,11 @@ class FixtureSiteErrorsTest < Minitest::Test
       assert_includes error, message
       assert_includes error, "in broken.html (#{tag})"
     end
+  end
+
+  def test_the_assets_drop_raises
+    error = build_error(%({{ assets["logo.png"].width }}))
+    assert_includes error, "the `assets` drop"
   end
 
   def test_the_api_raises_for_an_unknown_asset
