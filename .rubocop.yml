@@ -1,0 +1,71 @@
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "vendor/**/*"
+    - "tmp/**/*"
+    - "test/fixtures/**/*"
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+Style/Documentation:
+  Enabled: false
+
+Style/RegexpLiteral:
+  Enabled: false
+
+Style/PerlBackrefs:
+  Enabled: false
+
+Naming/FileName:
+  Exclude:
+    - "lib/jekyll-magik.rb"
+
+Metrics/ClassLength:
+  Max: 250
+
+Metrics/ModuleLength:
+  Max: 250
+
+Metrics/CyclomaticComplexity:
+  Max: 15
+
+Metrics/PerceivedComplexity:
+  Max: 15
+
+Metrics/BlockLength:
+  Exclude:
+    - "test/**/*"
+    - "*.gemspec"
+
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
+Style/PercentLiteralDelimiters:
+  PreferredDelimiters:
+    "%w": "()"
+    "%i": "()"
+
+Metrics/MethodLength:
+  Max: 30
+  Exclude:
+    - "test/**/*"
+
+Metrics/AbcSize:
+  Max: 40
+  Exclude:
+    - "test/**/*"
+
+Layout/LineLength:
+  Max: 110
+  Exclude:
+    - "test/**/*"
+
+# Jekyll's StaticFile#write returns whether it wrote; the name isn't ours.
+Naming/PredicateMethod:
+  Enabled: false

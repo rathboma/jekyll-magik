@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Lists every {% asset %} tag in a site's sources, with the markup exactly as
+# Liquid hands it to the tag, as JSON:
+#
+#   script/extract-tags ~/src/web > test/fixtures/beekeeper-tags.json
+#
+# test/args_parity_test.rb parses each one with jekyll-magik and with
+# liquid-tag-parser and expects the same result.
+
+require "json"
+require "liquid"
+
+root = File.expand_path(ARGV.fetch(0) { ENV.fetch("BEEKEEPER_WEB") })
+skip = %r{\A(?:_site|node_modules|\.git|\.jekyll-cache|vendor|tmp|workers/translate/node_modules)/}
+binary = /\.(?:png|jpe?g|gif|webp|svg|mp4|woff2?|ttf|ico|pdf|zip|gz)\z/i
+
+tags = []
+Dir.glob("**/*", File::FNM_DOTMATCH, base: root).sort.each do |path|
+  next if path.match?(skip) || path.match?(binary)
+
+  full = File.join(root, path)
+  next unless File.file?(full)
+
+  source = File.read(full, encoding: "UTF-8")
+  next unless source.valid_encoding? && source.include?("asset")
+
+  tokenizer = Liquid::Tokenizer.new(source)
+  while (token = tokenizer.shift)
+    next unless token.start_with?("{%") && (m = token.match(Liquid::BlockBody::FullToken))
+    next unless m[1] == "asset"
+
+    tags << { "file" => path, "markup" => m[2] }
+  end
+end
+
+warn "#{tags.size} tags in #{tags.map { |t| t["file"] }.uniq.size} files"
+puts JSON.pretty_generate(tags)

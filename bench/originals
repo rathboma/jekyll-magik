@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Checks jekyll-magik against jekyll-assets on beekeeper-studio/web, for files
+# used as they are (issue #1): builds the site with jekyll-assets, as
+# production does, with bench/plugins/originals_compare.rb loaded, which
+# renders every asset tag with jekyll-magik too and compares.
+#
+#   bench/originals [BEEKEEPER_WEB]     # default: $BEEKEEPER_WEB
+#
+# Needs the site's gems (`bundle install` there) and its Ruby (mise). The
+# build goes to a temp directory. If the site has a jekyll-assets build in
+# _site, its sprockets manifest is copied over first so that jekyll-assets
+# keeps its cache (about 45s instead of about 2.5 minutes).
+#
+# Exits 1 if anything differs.
+
+set -euo pipefail
+
+here="$(cd "$(dirname "$0")" && pwd)"
+web="$(cd "${1:-${BEEKEEPER_WEB:?pass the beekeeper-studio/web checkout or set BEEKEEPER_WEB}}" && pwd)"
+dest="$(mktemp -d "${TMPDIR:-/tmp}/magik-originals-XXXXXX")"
+report="$dest.json"
+
+if compgen -G "$web/_site/assets/.sprockets-manifest-*.json" > /dev/null; then
+  mkdir -p "$dest/assets"
+  cp "$web"/_site/assets/.sprockets-manifest-*.json "$dest/assets/"
+fi
+
+cd "$web"
+run=()
+if command -v mise > /dev/null 2>&1; then run=(mise exec --); fi
+
+start=$(date +%s)
+JEKYLL_ENV=production MAGIK_COMPARE_REPORT="$report" "${run[@]}" bundle exec jekyll build \
+  --config _config.yml,_config_production.yml \
+  --plugins "_plugins,$here/plugins" \
+  --destination "$dest" | grep -v -E '^\s*(Generating|esbuild|Jekyll Feed|Link graph|done in)' || true
+echo "built in $(( $(date +%s) - start ))s; report: $report"
+
+if [ ! -f "$report" ]; then
+  echo "no report: the build failed" >&2
+  exit 1
+fi
+if grep -q -E '"[^"]*(DIFFERENT|OUTSIDE|MISSING|jekyll-magik raises)[^"]*": [1-9]' "$report"; then
+  echo "differences found, see $report" >&2
+  exit 1
+fi
+rm -rf "$dest"

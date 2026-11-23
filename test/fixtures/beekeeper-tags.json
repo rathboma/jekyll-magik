@@ -1,0 +1,1478 @@
+[
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "main.css data-turbo-track=\"dynamic\" "
+  },
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "main.js data-turbo-track=\"reload\" "
+  },
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "tools.js data-turbo-track=\"reload\" "
+  },
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "tools.css data-turbo-track=\"dynamic\" "
+  },
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "tutorial.js "
+  },
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "\" --include=\"*.html\" --include=\"*.md\" . | grep -v node_modules | grep -v _site\n```\n\n**Strategy by Type:**\n\n**A. Simple Images (no processing)**\n```liquid\n<!-- BEFORE -->\n{% asset screenshots/main-dark-postgres.png alt=\"Screenshot\" "
+  },
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "{{post.image.asset}} magick:resize='600x' magick:crop='600x300+0+0' magick:gravity='center' alt=\"{{post.title}}\" "
+  },
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "{{page.hero_img}} @inline "
+  },
+  {
+    "file": ".claude-instructions/vite-migration-plan.md",
+    "markup": "'{{include.asset}}' @path "
+  },
+  {
+    "file": "CLAUDE.md",
+    "markup": "foo.jpg magick:resize='600x' ... "
+  },
+  {
+    "file": "CLAUDE.md",
+    "markup": "main.css "
+  },
+  {
+    "file": "CLAUDE.md",
+    "markup": "foo.png "
+  },
+  {
+    "file": "CLAUDE.md",
+    "markup": ""
+  },
+  {
+    "file": "CLAUDE.md",
+    "markup": "xyz.png "
+  },
+  {
+    "file": "_alternatives/popsql.md",
+    "markup": "screenshots/workspaces/share-action-read-only.png "
+  },
+  {
+    "file": "_alternatives/popsql.md",
+    "markup": "screenshots/workspaces/merge-preview.png "
+  },
+  {
+    "file": "_alternatives/popsql.md",
+    "markup": "screenshots/workspaces/history-restore.png "
+  },
+  {
+    "file": "_databases/sqlite-client.md",
+    "markup": "landing-pages/db-browser-sqlite.gif alt=\"DB Browser for SQLite Demo\""
+  },
+  {
+    "file": "_features/0-killer-ui.md",
+    "markup": "screenshots/main-dark-postgres.png "
+  },
+  {
+    "file": "_features/0-killer-ui.md",
+    "markup": "blog/quicksearch.gif "
+  },
+  {
+    "file": "_features/1-sql-editor.md",
+    "markup": "screenshots/main-dark-postgres.png "
+  },
+  {
+    "file": "_features/1-sql-editor.md",
+    "markup": "screenshots/run-selection-dark.png "
+  },
+  {
+    "file": "_features/1-sql-editor.md",
+    "markup": "blog/33/copy-excel.gif "
+  },
+  {
+    "file": "_features/1-sql-editor.md",
+    "markup": "features/magics.png "
+  },
+  {
+    "file": "_features/1.1-sql-ai.html",
+    "markup": "features/ai-shell.png "
+  },
+  {
+    "file": "_features/1.2-plugins.md",
+    "markup": "features/plugins.png alt=\"The Manage Plugins screen in Beekeeper Studio\" "
+  },
+  {
+    "file": "_features/2-table-data.md",
+    "markup": "screenshots/view-dark.png "
+  },
+  {
+    "file": "_features/2-table-data.md",
+    "markup": "screenshots/column-filter-dark.png "
+  },
+  {
+    "file": "_features/2-table-data.md",
+    "markup": "screenshots/navigation-dark.gif "
+  },
+  {
+    "file": "_features/2-table-data.md",
+    "markup": "screenshots/export-filtered-dark.png "
+  },
+  {
+    "file": "_features/2.1-json-sidebar.md",
+    "markup": "features/json-sidebar.png "
+  },
+  {
+    "file": "_features/2.1-json-sidebar.md",
+    "markup": "features/json-view.png "
+  },
+  {
+    "file": "_features/3-alter-schemas.md",
+    "markup": "blog/table-creation.png "
+  },
+  {
+    "file": "_features/3-alter-schemas.md",
+    "markup": "screenshots/table-relations-dark.png "
+  },
+  {
+    "file": "_features/3.1-erd.md",
+    "markup": "features/erd-cheeses.png "
+  },
+  {
+    "file": "_features/3.1-erd.md",
+    "markup": "features/erd-organizations.png "
+  },
+  {
+    "file": "_features/6-query-magics.md",
+    "markup": "features/stars-and-bars.png "
+  },
+  {
+    "file": "_features/6-query-magics.md",
+    "markup": "features/query-magics-links.png "
+  },
+  {
+    "file": "_features/6-query-magics.md",
+    "markup": "features/query-magics-images.jpg "
+  },
+  {
+    "file": "_features/6-query-magics.md",
+    "markup": "features/query-magics-booleans.png "
+  },
+  {
+    "file": "_features/6-query-magics.md",
+    "markup": "features/query-magics-enums.png "
+  },
+  {
+    "file": "_includes/autoplay-video.html",
+    "markup": "{{include.clip}}.mp4 @path "
+  },
+  {
+    "file": "_includes/autoplay-video.html",
+    "markup": "{{include.clip}}.jpg @path "
+  },
+  {
+    "file": "_includes/cloudflare-video.html",
+    "markup": "… @path "
+  },
+  {
+    "file": "_includes/cloudflare-video.html",
+    "markup": "{{include.cover_asset}}  magick:resize='1280x' @magick:strip @path "
+  },
+  {
+    "file": "_includes/customer-logo-wall.html",
+    "markup": "customer-logos/wall/{{logo.file}} @path "
+  },
+  {
+    "file": "_includes/customer-logo-wall.html",
+    "markup": "customer-logos/wall/{{logo.file}} @path "
+  },
+  {
+    "file": "_includes/customer-logo-wall.html",
+    "markup": "customer-logos/wall/{{logo.file}} @path "
+  },
+  {
+    "file": "_includes/database-features.html",
+    "markup": "landing-pages/go-deeper.jpg @path "
+  },
+  {
+    "file": "_includes/database-list.html",
+    "markup": "{{database.image.asset}} alt=\"{{ database.database }} logo\" "
+  },
+  {
+    "file": "_includes/footer.html",
+    "markup": "logos/bk-logo-yellow-icon.svg height=36 alt=\"Beekeeper Studio\" "
+  },
+  {
+    "file": "_includes/full-page-popup.html",
+    "markup": "screenshots/main-dark.png "
+  },
+  {
+    "file": "_includes/gallery.html",
+    "markup": "gallery/{{gallery.image}} @path "
+  },
+  {
+    "file": "_includes/gallery.html",
+    "markup": "gallery/{{gallery.image}} "
+  },
+  {
+    "file": "_includes/head.html",
+    "markup": "main.css data-turbo-track=\"dynamic\" "
+  },
+  {
+    "file": "_includes/header.html",
+    "markup": "logos/bk-logo-yellow-icon.svg height=42 class=\"logo-img\" alt=\"Beekeeper Studio\" "
+  },
+  {
+    "file": "_includes/lightbox-img.html",
+    "markup": "'{{include.asset}}' @path "
+  },
+  {
+    "file": "_includes/lightbox-img.html",
+    "markup": "'{{ include.asset}}' class=\"lightbox-img\" alt=\"{{ include.alt | default: include.description }}\" "
+  },
+  {
+    "file": "_includes/pitch.html",
+    "markup": "press-kit/bk-logo-icon-darkbg.svg height=42 "
+  },
+  {
+    "file": "_includes/pitch.html",
+    "markup": "press-kit/bk-logo-icon-darkbg.svg height=42 "
+  },
+  {
+    "file": "_includes/responsive-img.html",
+    "markup": "{{include.src}} @path "
+  },
+  {
+    "file": "_includes/responsive-img.html",
+    "markup": "{{include.src}} magick:resize='{{n}}x' magick:quality='80' @magick:strip @path "
+  },
+  {
+    "file": "_includes/responsive-img.html",
+    "markup": "{{include.src}} magick:resize='{{n}}x' magick:format='webp' magick:quality='80' @magick:strip @path "
+  },
+  {
+    "file": "_includes/thought-post.html",
+    "markup": "{{author.avatar}} alt=\"{{author_name}}\" "
+  },
+  {
+    "file": "_includes/thought-post.html",
+    "markup": "{{author.avatar}} alt=\"{{author_name}}\" "
+  },
+  {
+    "file": "_includes/tools/beekeeper-promo.html",
+    "markup": "screenshots/main-dark-postgres "
+  },
+  {
+    "file": "_includes/tools/promo.html",
+    "markup": "screenshots/main-dark-postgres alt=\"Beekeeper Studio running a query against PostgreSQL\" "
+  },
+  {
+    "file": "_includes/tools/to-sql/promo.html",
+    "markup": "screenshots/main-dark-postgres alt=\"Beekeeper Studio running a query against PostgreSQL\" "
+  },
+  {
+    "file": "_includes/video-card.html",
+    "markup": "{{include.video.poster.asset}} magick:resize='640x' magick:quality='80' @magick:strip class=\"video-card-img\" alt=\"{{ include.video.title | escape }}\" loading=\"lazy\" "
+  },
+  {
+    "file": "_includes/video-card.html",
+    "markup": "{{include.video.poster.asset}} magick:resize='640x' magick:quality='80' magick:format='jpg' @magick:strip class=\"video-card-img\" alt=\"{{ include.video.title | escape }}\" loading=\"lazy\" "
+  },
+  {
+    "file": "_layouts/alternative.html",
+    "markup": "img/blog/quicksearch "
+  },
+  {
+    "file": "_layouts/archive.html",
+    "markup": "{{post.image.asset}} magick:resize='600x' magick:crop='600x300+0+0' magick:gravity='center' @magick:strip alt=\"{{post.title}}\" "
+  },
+  {
+    "file": "_layouts/archive.html",
+    "markup": "blog/release.jpg alt=\"{{post.title}}\" "
+  },
+  {
+    "file": "_layouts/archive.html",
+    "markup": "blog/default.jpg alt=\"{{post.title}}\" "
+  },
+  {
+    "file": "_layouts/landing-page.html",
+    "markup": "{{page.hero_img}} @inline "
+  },
+  {
+    "file": "_layouts/landing-page.html",
+    "markup": "screenshots/{{screenshot.image}} @path "
+  },
+  {
+    "file": "_layouts/video.html",
+    "markup": "{{page.poster.asset}} magick:resize='1280x' magick:quality='80' @magick:strip @path "
+  },
+  {
+    "file": "_layouts/video.html",
+    "markup": "{{page.poster.asset}} magick:resize='1280x' magick:quality='80' magick:format='jpg' @magick:strip @path "
+  },
+  {
+    "file": "_posts/2020-05-22-release-1.4.md",
+    "markup": "blog/v14-walk.gif "
+  },
+  {
+    "file": "_posts/2020-07-24-gui-client-redshift-linux-mac-windows.md",
+    "markup": "blog/redshift-dark.png "
+  },
+  {
+    "file": "_posts/2020-07-24-gui-client-redshift-linux-mac-windows.md",
+    "markup": "blog/redshift-paste.gif "
+  },
+  {
+    "file": "_posts/2020-07-24-gui-client-redshift-linux-mac-windows.md",
+    "markup": "blog/redshift-dark.png title=\"Look at those buttons\" "
+  },
+  {
+    "file": "_posts/2020-07-24-gui-client-redshift-linux-mac-windows.md",
+    "markup": "blog/redshift-light.png title=\"Best light theme I've ever seen\" "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "screenshots/main-dark "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "wsl-terminal.png "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "vcx-1.png "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "vcx-2.png "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "vcx-3.png "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "xcalc.png "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "electron-window.png "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "two-sublimes.png "
+  },
+  {
+    "file": "_posts/2020-08-02-building-electron-wsl2-ubuntu.md",
+    "markup": "vscode-wsl.png "
+  },
+  {
+    "file": "_posts/2020-10-05-q3-by-the-numbers.md",
+    "markup": "blog/q3/pageviews.jpg "
+  },
+  {
+    "file": "_posts/2020-10-05-q3-by-the-numbers.md",
+    "markup": "blog/q3/chart "
+  },
+  {
+    "file": "_posts/2021-01-04-release-1.9.md",
+    "markup": "blog/sql-functions-procedures.png "
+  },
+  {
+    "file": "_posts/2021-01-04-release-1.9.md",
+    "markup": "blog/bks-filter.png "
+  },
+  {
+    "file": "_posts/2021-03-15-release-1.10.md",
+    "markup": "blog/bks-1.10.0.gif "
+  },
+  {
+    "file": "_posts/2021-05-17-release-1.11.md",
+    "markup": "1.11-walkthrough.gif "
+  },
+  {
+    "file": "_posts/2021-06-07-release-1.12.md",
+    "markup": "blog/table-properties.png "
+  },
+  {
+    "file": "_posts/2021-06-29-sqltools.md",
+    "markup": "blog/table-builder-cropped.gif "
+  },
+  {
+    "file": "_posts/2021-07-26-release-1.13.md",
+    "markup": "blog/release-1.13.png "
+  },
+  {
+    "file": "_posts/2021-08-30-release-2.0.md",
+    "markup": "blog/v2/bks-tweet.png "
+  },
+  {
+    "file": "_posts/2021-08-30-release-2.0.md",
+    "markup": "blog/v2/chart-web-no-axis.png "
+  },
+  {
+    "file": "_posts/2021-08-30-release-2.0.md",
+    "markup": "blog/v2/best-guess-active.png "
+  },
+  {
+    "file": "_posts/2021-09-14-release-2.1.md",
+    "markup": "blog/quicksearch "
+  },
+  {
+    "file": "_posts/2021-12-13-release-3.0.md",
+    "markup": "blog/v3/workspace-sidebar.png "
+  },
+  {
+    "file": "_posts/2021-12-13-release-3.0.md",
+    "markup": "blog/v3/workspace-cloud "
+  },
+  {
+    "file": "_posts/2022-01-14-postgres-client-for-ubuntu.md",
+    "markup": "img/competitors/pgadmin.png alt=\"pgAdmin 4 with its object browser and a query tool tab\" "
+  },
+  {
+    "file": "_posts/2022-01-14-postgres-client-for-ubuntu.md",
+    "markup": "img/competitors/dbeaver.png alt=\"DBeaver Community with its database navigator, SQL editor and result grid\" "
+  },
+  {
+    "file": "_posts/2022-01-14-postgres-client-for-ubuntu.md",
+    "markup": "img/competitors/datagrip.png alt=\"DataGrip with its database explorer, a SQL console and query results\" "
+  },
+  {
+    "file": "_posts/2022-01-15-distribute-electron-apps-for-linux.md",
+    "markup": "img/blog/appimage-website.png "
+  },
+  {
+    "file": "_posts/2022-03-10-sqlite-db-browser.md",
+    "markup": "blog/sqlite-tables.png "
+  },
+  {
+    "file": "_posts/2022-03-10-sqlite-db-browser.md",
+    "markup": "screenshots/view-dark "
+  },
+  {
+    "file": "_posts/2022-03-10-sqlite-db-browser.md",
+    "markup": "blog/table-creation.png "
+  },
+  {
+    "file": "_posts/2022-03-10-sqlite-db-browser.md",
+    "markup": "screenshots/main-dark "
+  },
+  {
+    "file": "_posts/2022-03-10-sqlite-db-browser.md",
+    "markup": "landing-pages/db-browser-sqlite.gif alt=\"DB Browser for SQLite Demo\""
+  },
+  {
+    "file": "_posts/2022-03-28-release-3.3.md",
+    "markup": "blog/33/solarized.png "
+  },
+  {
+    "file": "_posts/2022-03-28-release-3.3.md",
+    "markup": "blog/33/copy-excel.gif "
+  },
+  {
+    "file": "_posts/2022-03-28-release-3.3.md",
+    "markup": "blog/33/psql_errors.png "
+  },
+  {
+    "file": "_posts/2022-05-30-sqlite-create-database.md",
+    "markup": "blog/sqlite/create-database-windows alt=\"SQLite create database in Windows example\" "
+  },
+  {
+    "file": "_posts/2022-05-30-sqlite-create-database.md",
+    "markup": "blog/sqlite/start-finances alt=\"sqlite create database open in windows\""
+  },
+  {
+    "file": "_posts/2022-05-30-sqlite-create-database.md",
+    "markup": "landing-pages/db-browser-sqlite.gif alt=\"DB Browser for SQLite Demo\""
+  },
+  {
+    "file": "_posts/2022-06-16-postgres-change-column-type.md",
+    "markup": "blog/psql/change-column-type.gif alt=\"postgres change column type walkthrough\" "
+  },
+  {
+    "file": "_posts/2022-08-19-list-oracle-tables.md",
+    "markup": "img/blog/oracle-tables/image1.png "
+  },
+  {
+    "file": "_posts/2022-08-19-list-oracle-tables.md",
+    "markup": "img/blog/oracle-tables/image2.png "
+  },
+  {
+    "file": "_posts/2022-08-19-list-oracle-tables.md",
+    "markup": "img/blog/oracle-tables/image3.png "
+  },
+  {
+    "file": "_posts/2022-08-19-list-oracle-tables.md",
+    "markup": "img/blog/oracle-tables/image4.png "
+  },
+  {
+    "file": "_posts/2022-08-19-list-oracle-tables.md",
+    "markup": "img/blog/oracle-tables/image5.png "
+  },
+  {
+    "file": "_posts/2022-09-16-backup-oracle-database.md",
+    "markup": "img/blog/onair.jpg "
+  },
+  {
+    "file": "_posts/2022-09-16-backup-oracle-database.md",
+    "markup": "img/blog/dominos.jpg "
+  },
+  {
+    "file": "_posts/2022-09-16-backup-oracle-database.md",
+    "markup": "img/blog/servers.jpg "
+  },
+  {
+    "file": "_posts/2022-09-26-best-postgresql-tools.md",
+    "markup": "blog/eversql/i1.png "
+  },
+  {
+    "file": "_posts/2022-09-26-best-postgresql-tools.md",
+    "markup": "blog/eversql/i2.gif "
+  },
+  {
+    "file": "_posts/2022-09-26-best-postgresql-tools.md",
+    "markup": "blog/eversql/i3.png "
+  },
+  {
+    "file": "_posts/2022-09-26-best-postgresql-tools.md",
+    "markup": "blog/eversql/i4.gif "
+  },
+  {
+    "file": "_posts/2022-09-26-best-postgresql-tools.md",
+    "markup": "blog/eversql/i6.png "
+  },
+  {
+    "file": "_posts/2022-09-26-best-postgresql-tools.md",
+    "markup": "blog/eversql/i5.png "
+  },
+  {
+    "file": "_posts/2022-09-26-best-postgresql-tools.md",
+    "markup": "blog/eversql/i7.png "
+  },
+  {
+    "file": "_posts/2022-09-26-best-postgresql-tools.md",
+    "markup": "screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2022-12-03-postgres-add-constraint.md",
+    "markup": "img/table-properties.png "
+  },
+  {
+    "file": "_posts/2022-12-05-sql-json-extract.md",
+    "markup": "features/json-view.png "
+  },
+  {
+    "file": "_posts/2022-12-14-a-beginners-guide-to-database-relationships.md",
+    "markup": "database-relationships/one-to-one.svg alt=\"One-to-One Database Relationship Diagram\" width=\"400\" "
+  },
+  {
+    "file": "_posts/2022-12-14-a-beginners-guide-to-database-relationships.md",
+    "markup": "database-relationships/one-to-many.svg alt=\"One-to-Many Database Relationship Diagram\" width=\"400\" "
+  },
+  {
+    "file": "_posts/2022-12-14-a-beginners-guide-to-database-relationships.md",
+    "markup": "database-relationships/many-to-many.svg alt=\"Many-to-Many Database Relationship Diagram\" width=\"500\" "
+  },
+  {
+    "file": "_posts/2023-01-01-guide-to-unique-constraints-in-postgresql.md",
+    "markup": "img/screenshots/unique_constraints.png "
+  },
+  {
+    "file": "_posts/2023-01-13-database-transactions-guide.md",
+    "markup": "img/blog/transaction-status.jpg "
+  },
+  {
+    "file": "_posts/2023-01-14-postgres-add-pk-to-table.md",
+    "markup": "blog/psql/table-structure-postgres.png alt=\"Beekeeper Studio showing the structure of a PostgreSQL customer table, with customer_id marked as the primary key\" "
+  },
+  {
+    "file": "_posts/2023-01-15-how-to-list-databases-in-postgres.md",
+    "markup": "img/screenshots/main-dark-postgres.png "
+  },
+  {
+    "file": "_posts/2023-01-21-how-to-solve-sqlite-database-is-locked-error.md",
+    "markup": "blog/sqlite/insert-and-list.png alt=\"Beekeeper Studio showing a successful SQL insert and select query on an SQLite database, confirming that new rows can be written after resolving a lock.\" "
+  },
+  {
+    "file": "_posts/2023-03-08-how-to-source-control-sql-server-to-streamline-database-development.md",
+    "markup": "blog/versionsql.png "
+  },
+  {
+    "file": "_posts/2023-03-15-postgresql-create-function.md",
+    "markup": "img/blog/custom-functions.png "
+  },
+  {
+    "file": "_posts/2023-03-22-oracle-rename-column.md",
+    "markup": "img/table-properties.png "
+  },
+  {
+    "file": "_posts/2024-01-02-mysql-full-outer-join.md",
+    "markup": "sql-joins/full-outer-join.svg alt=\"Full Outer Join Visualization\" "
+  },
+  {
+    "file": "_posts/2024-01-02-mysql-full-outer-join.md",
+    "markup": "sql-joins/left-join.svg alt=\"Left Join Visualization\" "
+  },
+  {
+    "file": "_posts/2024-01-02-mysql-full-outer-join.md",
+    "markup": "sql-joins/right-join.svg alt=\"Right Join Visualization\" "
+  },
+  {
+    "file": "_posts/2024-01-12-release-4.1-spreadsheet-mode-editor-wayland.md",
+    "markup": "blog/41/bks-ss.png "
+  },
+  {
+    "file": "_posts/2024-01-12-release-4.1-spreadsheet-mode-editor-wayland.md",
+    "markup": "blog/41/bks-edit.png "
+  },
+  {
+    "file": "_posts/2024-07-02-datagrip-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2024-07-02-datagrip-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2024-07-02-datagrip-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2024-07-02-datagrip-alternatives-free.md",
+    "markup": "img/competitors/sequel-ace.jpg "
+  },
+  {
+    "file": "_posts/2024-07-02-datagrip-alternatives-free.md",
+    "markup": "img/competitors/squirrel-sql.png "
+  },
+  {
+    "file": "_posts/2024-07-02-datagrip-alternatives-free.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2024-09-11-free-postgresql-guis.md",
+    "markup": "screenshots/f-query-editor.png alt=\"Query editor in Beekeeper Studio\" "
+  },
+  {
+    "file": "_posts/2024-09-11-free-postgresql-guis.md",
+    "markup": "competitors/pgadmin.png alt=\"pgAdmin screenshot\" "
+  },
+  {
+    "file": "_posts/2024-09-11-free-postgresql-guis.md",
+    "markup": "competitors/dbeaver.png alt=\"DBeaver screenshot\" "
+  },
+  {
+    "file": "_posts/2024-09-11-free-postgresql-guis.md",
+    "markup": "competitors/heidi.png alt=\"HeidiSQL screenshot\" "
+  },
+  {
+    "file": "_posts/2024-09-11-free-postgresql-guis.md",
+    "markup": "competitors/adminer.png alt=\"Adminer screenshot\" "
+  },
+  {
+    "file": "_posts/2024-09-11-free-postgresql-guis.md",
+    "markup": "competitors/datagrip.png alt=\"DataGrip screenshot\" "
+  },
+  {
+    "file": "_posts/2024-09-11-free-postgresql-guis.md",
+    "markup": "competitors/tableplus.png alt=\"TablePlus screenshot\" "
+  },
+  {
+    "file": "_posts/2024-09-11-free-sqlserver-guis.md",
+    "markup": "screenshots/sql-server/table-data.webp alt=\"Beekeeper Studio, a free SQL Server GUI, editing table data in a spreadsheet view\" "
+  },
+  {
+    "file": "_posts/2024-09-11-free-sqlserver-guis.md",
+    "markup": "img/competitors/sql-server.png "
+  },
+  {
+    "file": "_posts/2024-09-11-free-sqlserver-guis.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2024-09-11-free-sqlserver-guis.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2024-09-11-free-sqlserver-guis.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2024-09-30-free-mariadb-guis.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2024-09-30-free-mariadb-guis.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2024-09-30-free-mariadb-guis.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2024-09-30-free-mariadb-guis.md",
+    "markup": "img/competitors/phpmyadmin.png "
+  },
+  {
+    "file": "_posts/2024-09-30-free-mariadb-guis.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2024-11-04-release-5.0-beta.md",
+    "markup": "blog/release-5-json.png alt=\"JSON view for database records\" "
+  },
+  {
+    "file": "_posts/2024-12-13-free-sqlite-guis.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2024-12-13-free-sqlite-guis.md",
+    "markup": "img/competitors/dbbrowserforsqlite.png "
+  },
+  {
+    "file": "_posts/2024-12-13-free-sqlite-guis.md",
+    "markup": "img/competitors/sqlitestudio.png "
+  },
+  {
+    "file": "_posts/2024-12-13-free-sqlite-guis.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2024-12-13-free-sqlite-guis.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-01-07-free-redshift-guis.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2025-01-07-free-redshift-guis.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-01-07-free-redshift-guis.md",
+    "markup": "img/competitors/pgadmin.png "
+  },
+  {
+    "file": "_posts/2025-01-07-free-redshift-guis.md",
+    "markup": "img/competitors/tableplus.png "
+  },
+  {
+    "file": "_posts/2025-01-07-free-redshift-guis.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2025-01-20-azure-data-studio-alternatives-free.md",
+    "markup": "screenshots/sql-server/window-function-query.webp alt=\"Beekeeper Studio, an Azure Data Studio alternative, running a T-SQL query against SQL Server\" "
+  },
+  {
+    "file": "_posts/2025-01-20-azure-data-studio-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-01-20-azure-data-studio-alternatives-free.md",
+    "markup": "img/competitors/squirrel-sql.png "
+  },
+  {
+    "file": "_posts/2025-01-20-azure-data-studio-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2025-03-17-heidisql-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2025-03-17-heidisql-alternatives-free.md",
+    "markup": "img/competitors/dbbrowserforsqlite.png "
+  },
+  {
+    "file": "_posts/2025-03-17-heidisql-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-03-17-heidisql-alternatives-free.md",
+    "markup": "img/competitors/phpmyadmin.png "
+  },
+  {
+    "file": "_posts/2025-03-17-heidisql-alternatives-free.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2025-03-18-sqlite-browser-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2025-03-18-sqlite-browser-alternatives-free.md",
+    "markup": "img/competitors/sqlitestudio.png "
+  },
+  {
+    "file": "_posts/2025-03-18-sqlite-browser-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-03-18-sqlite-browser-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2025-03-18-sqlite-browser-alternatives-free.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2025-03-19-popsql-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2025-03-19-popsql-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-03-19-top-free-open-source-sql-editors.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2025-03-19-top-free-open-source-sql-editors.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-03-19-top-free-open-source-sql-editors.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2025-03-19-top-free-open-source-sql-editors.md",
+    "markup": "img/competitors/squirrel-sql.png "
+  },
+  {
+    "file": "_posts/2025-03-19-top-free-open-source-sql-editors.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2025-03-20-sqlpro-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2025-03-20-sqlpro-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-03-20-sqlpro-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2025-03-20-sqlpro-alternatives-free.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2025-03-20-sqlpro-alternatives-free.md",
+    "markup": "img/competitors/pgadmin.png "
+  },
+  {
+    "file": "_posts/2025-03-20-top-free-open-source-database-managers.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2025-03-20-top-free-open-source-database-managers.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-03-20-top-free-open-source-database-managers.md",
+    "markup": "img/competitors/phpmyadmin.png "
+  },
+  {
+    "file": "_posts/2025-03-20-top-free-open-source-database-managers.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2025-03-20-top-free-open-source-database-managers.md",
+    "markup": "img/competitors/dbbrowserforsqlite.png "
+  },
+  {
+    "file": "_posts/2025-03-21-phpmyadmin-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2025-03-21-phpmyadmin-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2025-03-21-phpmyadmin-alternatives-free.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2025-03-21-phpmyadmin-alternatives-free.md",
+    "markup": "img/competitors/workbench.png "
+  },
+  {
+    "file": "_posts/2025-03-21-phpmyadmin-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-03-22-sql-server-management-studio-alternatives-free.md",
+    "markup": "screenshots/sql-server/join-query.webp alt=\"Beekeeper Studio, a free SSMS alternative, running a T-SQL query against SQL Server\" "
+  },
+  {
+    "file": "_posts/2025-03-22-sql-server-management-studio-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2025-03-22-sql-server-management-studio-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2025-03-22-sql-server-management-studio-alternatives-free.md",
+    "markup": "img/competitors/squirrel-sql.png "
+  },
+  {
+    "file": "_posts/2025-04-24-release-5.2.md",
+    "markup": "blog/52/mongo-shell-2.png alt=\"MongoDB Shell screenshot\" "
+  },
+  {
+    "file": "_posts/2025-04-24-release-5.2.md",
+    "markup": "blog/52/sql-to-mongo.png alt=\"SQL for MongoDB\" "
+  },
+  {
+    "file": "_posts/2025-05-07-postgres-cross-join.md",
+    "markup": "sql-joins/cross-join.svg alt=\"Cross Join Visualization\" "
+  },
+  {
+    "file": "_posts/2025-05-13-mysql-joins-guide.md",
+    "markup": "sql-joins/inner-join.svg alt=\"INNER JOIN Venn diagram showing only the overlapping area between two tables\" "
+  },
+  {
+    "file": "_posts/2025-05-13-mysql-joins-guide.md",
+    "markup": "sql-joins/left-join.svg alt=\"LEFT JOIN Venn diagram showing the entire left table plus overlapping area\" "
+  },
+  {
+    "file": "_posts/2025-05-13-mysql-joins-guide.md",
+    "markup": "sql-joins/right-join.svg alt=\"RIGHT JOIN Venn diagram showing the entire right table plus overlapping area\" "
+  },
+  {
+    "file": "_posts/2025-05-13-mysql-joins-guide.md",
+    "markup": "sql-joins/full-outer-join.svg alt=\"FULL OUTER JOIN Venn diagram showing both entire tables\" "
+  },
+  {
+    "file": "_posts/2025-05-13-mysql-joins-guide.md",
+    "markup": "sql-joins/cross-join.svg alt=\"CROSS JOIN diagram showing all possible combinations between tables\" "
+  },
+  {
+    "file": "_posts/2025-05-27-top-5-mongodb-guis.md",
+    "markup": "blog/52/mongo-shell-2.png alt=\"MongoDB Shell screenshot\" "
+  },
+  {
+    "file": "_posts/2025-05-27-top-5-mongodb-guis.md",
+    "markup": "img/competitors/mongodb-compass.png "
+  },
+  {
+    "file": "_posts/2025-05-27-top-5-mongodb-guis.md",
+    "markup": "img/competitors/nosql-booster.png "
+  },
+  {
+    "file": "_posts/2025-05-27-top-5-mongodb-guis.md",
+    "markup": "img/competitors/studio3t.png "
+  },
+  {
+    "file": "_posts/2025-05-27-top-5-mongodb-guis.md",
+    "markup": "img/competitors/tableplus-mongo.png "
+  },
+  {
+    "file": "_posts/2025-06-21-studio3t-top-5-alternatives.md",
+    "markup": "blog/52/mongo-shell-2.png alt=\"MongoDB Shell screenshot\" "
+  },
+  {
+    "file": "_posts/2025-06-21-studio3t-top-5-alternatives.md",
+    "markup": "img/competitors/mongodb-compass.png "
+  },
+  {
+    "file": "_posts/2025-06-21-studio3t-top-5-alternatives.md",
+    "markup": "img/competitors/nosql-booster.png "
+  },
+  {
+    "file": "_posts/2025-06-21-studio3t-top-5-alternatives.md",
+    "markup": "img/competitors/dbeaver-mongodb.png "
+  },
+  {
+    "file": "_posts/2025-06-21-studio3t-top-5-alternatives.md",
+    "markup": "img/competitors/tableplus-mongo.png "
+  },
+  {
+    "file": "_posts/2025-07-02-sql-joins-for-beginners-with-diagrams.md",
+    "markup": "sql-joins/inner-join.svg alt=\"Inner Join Diagram\" width=\"300\" "
+  },
+  {
+    "file": "_posts/2025-07-02-sql-joins-for-beginners-with-diagrams.md",
+    "markup": "sql-joins/left-join.svg alt=\"Left Join Diagram\" width=\"300\" "
+  },
+  {
+    "file": "_posts/2025-07-02-sql-joins-for-beginners-with-diagrams.md",
+    "markup": "sql-joins/right-join.svg alt=\"Right Join Diagram\" width=\"300\" "
+  },
+  {
+    "file": "_posts/2025-07-02-sql-joins-for-beginners-with-diagrams.md",
+    "markup": "sql-joins/full-outer-join.svg alt=\"Full Outer Join Diagram\" width=\"300\" "
+  },
+  {
+    "file": "_posts/2025-07-02-sql-joins-for-beginners-with-diagrams.md",
+    "markup": "sql-joins/cross-join.svg alt=\"Cross Join Diagram\" width=\"300\" "
+  },
+  {
+    "file": "_posts/2025-07-02-sql-joins-for-beginners-with-diagrams.md",
+    "markup": "sql-joins/left-anti-join.svg alt=\"Left Anti Join Diagram\" width=\"300\" "
+  },
+  {
+    "file": "_posts/2025-07-02-sql-joins-for-beginners-with-diagrams.md",
+    "markup": "sql-joins/right-anti-join.svg alt=\"Right Anti Join Diagram\" width=\"300\" "
+  },
+  {
+    "file": "_posts/2025-07-14-release-5.3.md",
+    "markup": "features/ai-shell.png "
+  },
+  {
+    "file": "_posts/2025-07-22-meet-your-ai-sql-pair-programmer.md",
+    "markup": "screenshots/ai-shell-presenting-sql-query.png alt=\"Beekeeper Studio's AI Shell\" style=\"width: 100%; height: auto;\" "
+  },
+  {
+    "file": "_posts/2025-07-24-many-to-many-database-relationships-complete-guide.md",
+    "markup": "database-relationships/many-to-many.svg alt=\"Many to Many Database Relationship Diagram\" width=\"500\" "
+  },
+  {
+    "file": "_posts/2025-07-24-one-to-many-database-relationships-complete-guide.md",
+    "markup": "database-relationships/one-to-many.svg alt=\"One-to-Many Database Relationship Diagram\" width=\"400\" "
+  },
+  {
+    "file": "_posts/2025-07-24-one-to-one-database-relationships-complete-guide.md",
+    "markup": "database-relationships/one-to-one.svg alt=\"One-to-One Database Relationship Diagram\" width=\"400\" "
+  },
+  {
+    "file": "_posts/2025-08-19-gpt-5-now-in-ai-shell.md",
+    "markup": "screenshots/ai-shell-presenting-sql-query.png alt=\"Beekeeper Studio AI Shell now supports GPT-5, Claude, Gemini, and local models\" style=\"width: 100%; height: auto;\" "
+  },
+  {
+    "file": "_posts/2025-08-20-gpt-5-for-sql.md",
+    "markup": "screenshots/ai-shell-presenting-sql-query.png alt=\"Beekeeper Studio's AI Shell\" style=\"width: 100%; height: auto;\" "
+  },
+  {
+    "file": "_posts/2025-08-27-clickhouse-guis-for-developers.md",
+    "markup": "screenshots/f-query-editor.png alt=\"Query editor in Beekeeper Studio\" "
+  },
+  {
+    "file": "_posts/2025-08-27-clickhouse-guis-for-developers.md",
+    "markup": "competitors/tabixio.png alt=\"Tabix screenshot\" "
+  },
+  {
+    "file": "_posts/2025-08-27-clickhouse-guis-for-developers.md",
+    "markup": "competitors/dbeaver.png alt=\"DBeaver screenshot\" "
+  },
+  {
+    "file": "_posts/2025-08-27-clickhouse-guis-for-developers.md",
+    "markup": "competitors/datagrip.png alt=\"DataGrip screenshot\" "
+  },
+  {
+    "file": "_posts/2025-09-09-redis-trino-surrealdb-now-in-beta.md",
+    "markup": "screenshots/bks-release-channel.jpg alt=\"Enable beta releases in Beekeeper Studio via the Help menu.\" style=\"width: 50%; height: auto;\" "
+  },
+  {
+    "file": "_posts/2025-09-28-cockroachdb-gui-clients.md",
+    "markup": "screenshots/f-query-editor.png alt=\"Query editor in Beekeeper Studio\" "
+  },
+  {
+    "file": "_posts/2025-09-28-cockroachdb-gui-clients.md",
+    "markup": "competitors/dbeaver.png alt=\"DBeaver screenshot\" "
+  },
+  {
+    "file": "_posts/2025-09-28-cockroachdb-gui-clients.md",
+    "markup": "competitors/datagrip.png alt=\"DataGrip screenshot\" "
+  },
+  {
+    "file": "_posts/2025-09-28-cockroachdb-gui-clients.md",
+    "markup": "competitors/tableplus.png alt=\"TablePlus screenshot\" "
+  },
+  {
+    "file": "_posts/2025-09-28-cockroachdb-gui-clients.md",
+    "markup": "competitors/pgadmin.png alt=\"pgAdmin screenshot\" "
+  },
+  {
+    "file": "_posts/2026-01-09-top-sql-ai-apps-services.md",
+    "markup": "img/features/ai-shell.png alt=\"Beekeeper Studio AI Shell interface showing natural language to SQL conversion\" "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/sequel-ace.jpg "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/squirrel-sql.png "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/pgadmin.png "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/workbench.png "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/dbgate.png "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/antares.png "
+  },
+  {
+    "file": "_posts/2026-02-04-dbeaver-alternatives-free.md",
+    "markup": "img/competitors/sqlitestudio.png "
+  },
+  {
+    "file": "_posts/2026-05-12-sequel-pro-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2026-05-12-sequel-pro-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2026-05-12-sequel-pro-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2026-05-12-sequel-pro-alternatives-free.md",
+    "markup": "img/competitors/workbench.png "
+  },
+  {
+    "file": "_posts/2026-05-12-sequel-pro-alternatives-free.md",
+    "markup": "img/competitors/tableplus.png "
+  },
+  {
+    "file": "_posts/2026-05-20-pgadmin-alternatives-free.md",
+    "markup": "img/screenshots/main-dark-postgres.png "
+  },
+  {
+    "file": "_posts/2026-05-20-pgadmin-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2026-05-20-pgadmin-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2026-05-20-pgadmin-alternatives-free.md",
+    "markup": "img/competitors/tableplus.png "
+  },
+  {
+    "file": "_posts/2026-05-20-pgadmin-alternatives-free.md",
+    "markup": "img/competitors/adminer.png "
+  },
+  {
+    "file": "_posts/2026-05-27-dbvisualizer-alternatives-free.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2026-05-27-dbvisualizer-alternatives-free.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2026-05-27-dbvisualizer-alternatives-free.md",
+    "markup": "img/competitors/heidi.png "
+  },
+  {
+    "file": "_posts/2026-05-27-dbvisualizer-alternatives-free.md",
+    "markup": "img/competitors/tableplus.png "
+  },
+  {
+    "file": "_posts/2026-05-27-dbvisualizer-alternatives-free.md",
+    "markup": "img/competitors/squirrel-sql.png "
+  },
+  {
+    "file": "_posts/2026-06-29-free-redis-guis.md",
+    "markup": "img/screenshots/main-dark.png alt=\"Beekeeper Studio Redis GUI\" "
+  },
+  {
+    "file": "_posts/2026-06-29-free-redis-guis.md",
+    "markup": "img/competitors/tableplus.png alt=\"TablePlus screenshot\" "
+  },
+  {
+    "file": "_posts/2026-06-30-free-snowflake-guis.md",
+    "markup": "img/screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2026-06-30-free-snowflake-guis.md",
+    "markup": "img/competitors/dbeaver.png "
+  },
+  {
+    "file": "_posts/2026-06-30-free-snowflake-guis.md",
+    "markup": "img/competitors/datagrip.png "
+  },
+  {
+    "file": "_posts/2026-06-30-free-snowflake-guis.md",
+    "markup": "img/competitors/tableplus.png "
+  },
+  {
+    "file": "_posts/2026-07-07-release-5.9-snowflake-kerberos.md",
+    "markup": "screenshots/snowflake_table_view.png "
+  },
+  {
+    "file": "_posts/2026-07-07-release-5.9-snowflake-kerberos.md",
+    "markup": "screenshots/snowflake_mfa.png "
+  },
+  {
+    "file": "_posts/2026-07-20-how-to-write-sql-with-ai.md",
+    "markup": "img/screenshots/snowflake_ai_shell.png alt=\"Beekeeper Studio AI Shell landing screen with an empty prompt box, ready to answer questions about the connected database's tables\" "
+  },
+  {
+    "file": "_posts/2026-07-20-how-to-write-sql-with-ai.md",
+    "markup": "img/features/ai-shell.png alt=\"Beekeeper Studio AI Shell exploring a database's actor and payment tables, asking for permission before each step\" "
+  },
+  {
+    "file": "_posts/2026-07-20-how-to-write-sql-with-ai.md",
+    "markup": "img/screenshots/snowflake_ai_shell_analysis.png alt=\"Beekeeper Studio AI Shell showing a completed query result table alongside a plain-English summary of the findings\" "
+  },
+  {
+    "file": "_posts/2026-08-12-release-6.0.md",
+    "markup": "features/workspace-share-modal.png "
+  },
+  {
+    "file": "_posts/2026-08-17-free-cassandra-guis.md",
+    "markup": "img/screenshots/main-dark.png alt=\"Beekeeper Studio SQL editor\" "
+  },
+  {
+    "file": "_posts/2026-08-17-free-cassandra-guis.md",
+    "markup": "img/competitors/tableplus.png alt=\"TablePlus screenshot\" "
+  },
+  {
+    "file": "_posts/2026-08-17-free-cassandra-guis.md",
+    "markup": "img/competitors/dbeaver.png alt=\"DBeaver screenshot\" "
+  },
+  {
+    "file": "_posts/2026-09-24-azure-data-studio-is-dead.md",
+    "markup": "screenshots/main-dark.png "
+  },
+  {
+    "file": "_posts/2026-09-29-ssms-for-mac.md",
+    "markup": "screenshots/sql-server/query-editor.webp alt=\"Beekeeper Studio running a T-SQL query against SQL Server, an SSMS alternative for Mac\" "
+  },
+  {
+    "file": "_posts/2026-09-29-ssms-for-mac.md",
+    "markup": "screenshots/sql-server/table-data.webp alt=\"Editing SQL Server table data in Beekeeper Studio's spreadsheet view\" "
+  },
+  {
+    "file": "_posts/2026-09-29-ssms-for-mac.md",
+    "markup": "competitors/dbeaver.png alt=\"DBeaver screenshot\" "
+  },
+  {
+    "file": "_posts/2026-09-29-ssms-for-mac.md",
+    "markup": "competitors/datagrip.png alt=\"DataGrip screenshot\" "
+  },
+  {
+    "file": "_posts/2026-09-29-ssms-for-mac.md",
+    "markup": "competitors/vscode-mssql.webp alt=\"The MSSQL extension for VSCode running a query against SQL Server on a Mac\" "
+  },
+  {
+    "file": "_posts/2026-09-29-ssms-for-mac.md",
+    "markup": "competitors/sqlpro-mssql.webp alt=\"SQLPro for MSSQL running a query on a Mac\" "
+  },
+  {
+    "file": "_posts/2026-10-08-safely-work-in-production-database.md",
+    "markup": "blog/safely-work-in-production-database/transaction-timeout-warning.png alt=\"Beekeeper Studio auto rollback of transactions after 10 minutes\" loading=\"lazy\" "
+  },
+  {
+    "file": "_posts/2026-10-22-mongodb-compass-alternatives.md",
+    "markup": "blog/52/mongo-shell-2.png alt=\"Beekeeper Studio running a query against MongoDB\" "
+  },
+  {
+    "file": "_posts/2026-10-22-mongodb-compass-alternatives.md",
+    "markup": "img/competitors/studio3t.png alt=\"Studio 3T screenshot\" "
+  },
+  {
+    "file": "_posts/2026-10-22-mongodb-compass-alternatives.md",
+    "markup": "img/competitors/nosql-booster.png alt=\"NoSQLBooster screenshot\" "
+  },
+  {
+    "file": "_posts/2026-10-22-mongodb-compass-alternatives.md",
+    "markup": "img/competitors/dbeaver-mongodb.png alt=\"DBeaver working with MongoDB\" "
+  },
+  {
+    "file": "_posts/2026-10-22-mongodb-compass-alternatives.md",
+    "markup": "img/competitors/datagrip.png alt=\"DataGrip screenshot\" "
+  },
+  {
+    "file": "_posts/2026-10-27-free-trino-presto-guis.md",
+    "markup": "img/competitors/dbeaver.png alt=\"DBeaver Community SQL editor\" "
+  },
+  {
+    "file": "_posts/2026-10-27-free-trino-presto-guis.md",
+    "markup": "img/competitors/datagrip.png alt=\"DataGrip SQL editor\" "
+  },
+  {
+    "file": "_posts/2026-10-28-release-6-2-plugins.md",
+    "markup": "video/beekeeper-6-2-all-themes.png "
+  },
+  {
+    "file": "_posts/2026-11-05-dynamodb-gui-clients.md",
+    "markup": "img/competitors/datagrip.png alt=\"DataGrip SQL editor\" "
+  },
+  {
+    "file": "bin/lib/database_svg.rb",
+    "markup": "... @inline "
+  },
+  {
+    "file": "index.html",
+    "markup": "home/hive-release.svg alt=\"\" "
+  },
+  {
+    "file": "index.html",
+    "markup": "home/connection-options.svg alt=\"\" "
+  },
+  {
+    "file": "index.html",
+    "markup": "home/quality-editing.svg alt=\"\" "
+  },
+  {
+    "file": "index.html",
+    "markup": "home/table-view.svg alt=\"\" "
+  },
+  {
+    "file": "index.html",
+    "markup": "home/tabs.svg alt=\"\" "
+  },
+  {
+    "file": "index.html",
+    "markup": "home/table-view.svg alt=\"\" "
+  },
+  {
+    "file": "index.html",
+    "markup": "home/edit-schema.svg alt=\"\" "
+  },
+  {
+    "file": "index.html",
+    "markup": "home/export.svg alt=\"\" "
+  },
+  {
+    "file": "pages/about.html",
+    "markup": "logos/bk-logo-yellow-icon.svg "
+  },
+  {
+    "file": "pages/about.html",
+    "markup": "screenshots/may-2020.jpg @path "
+  },
+  {
+    "file": "pages/about.html",
+    "markup": "screenshots/may-2020.jpg "
+  },
+  {
+    "file": "pages/about.html",
+    "markup": "beekeeper-2010.png @path "
+  },
+  {
+    "file": "pages/about.html",
+    "markup": "beekeeper-2010.png "
+  },
+  {
+    "file": "pages/about.html",
+    "markup": "founders/matthew.png "
+  },
+  {
+    "file": "pages/admin/translate.html",
+    "markup": "translation-review.css "
+  },
+  {
+    "file": "pages/blog.html",
+    "markup": "{{post.image.asset}} magick:resize='600x' magick:crop='600x300+0+0' magick:gravity='center' @magick:strip alt=\"{{post.title}}\" loading=\"lazy\" "
+  },
+  {
+    "file": "pages/blog.html",
+    "markup": "blog/release.jpg alt=\"{{post.title}}\" loading=\"lazy\" "
+  },
+  {
+    "file": "pages/blog.html",
+    "markup": "blog/default.jpg alt=\"{{post.title}}\" loading=\"lazy\"  "
+  },
+  {
+    "file": "pages/community.html",
+    "markup": "screenshots/main-dark.png alt=\"Beekeeper Studio, main editor\" "
+  },
+  {
+    "file": "pages/features.html",
+    "markup": "{{feature.asset}} "
+  },
+  {
+    "file": "pages/press.html",
+    "markup": "press-kit/bk-logo-icon-lightbg.svg "
+  },
+  {
+    "file": "pages/press.html",
+    "markup": "press-kit/bk-logo-icon-darkbg.svg "
+  },
+  {
+    "file": "pages/press.html",
+    "markup": "press-kit/bk-logo-icon-monoblack.svg "
+  },
+  {
+    "file": "pages/press.html",
+    "markup": "press-kit/bk-logo-icon-monowhite.svg "
+  },
+  {
+    "file": "pages/sql-join-cheat-sheet.html",
+    "markup": "sql-joins/inner-join.svg "
+  },
+  {
+    "file": "pages/sql-join-cheat-sheet.html",
+    "markup": "sql-joins/left-join.svg "
+  },
+  {
+    "file": "pages/sql-join-cheat-sheet.html",
+    "markup": "sql-joins/right-join.svg "
+  },
+  {
+    "file": "pages/sql-join-cheat-sheet.html",
+    "markup": "sql-joins/full-outer-join.svg "
+  },
+  {
+    "file": "pages/sql-join-cheat-sheet.html",
+    "markup": "sql-joins/cross-join.svg "
+  },
+  {
+    "file": "pages/sql-join-cheat-sheet.html",
+    "markup": "sql-joins/left-anti-join.svg "
+  },
+  {
+    "file": "pages/sql-join-cheat-sheet.html",
+    "markup": "sql-joins/right-anti-join.svg "
+  },
+  {
+    "file": "pages/thoughts.html",
+    "markup": "{{author.avatar}} alt=\"{{author.name}}\" loading=\"lazy\" "
+  },
+  {
+    "file": "pages/tools/database-password-generator.html",
+    "markup": "logos/bk-logo-yellow-icon.svg class=\"pwg-cta-logo\" alt=\"\" "
+  },
+  {
+    "file": "pages/tools/database-password-generator.html",
+    "markup": "screenshots/main-dark-postgres alt=\"Beekeeper Studio running a query against PostgreSQL\" "
+  },
+  {
+    "file": "pages/tools/sql-table-builder.html",
+    "markup": "screenshots/main-dark-postgres alt=\"Beekeeper Studio running a query against PostgreSQL\" "
+  },
+  {
+    "file": "pages/trial.html",
+    "markup": "screenshots/upgrade-modal.png alt=\"Click the free trial button\" "
+  },
+  {
+    "file": "pages/why-to-upgrade.html",
+    "markup": "{{db.image.asset}} "
+  }
+]

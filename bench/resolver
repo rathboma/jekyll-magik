@@ -1,0 +1,86 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Resolves tricky names in a scratch site with sprockets (through
+# jekyll-assets) and with jekyll-magik's Resolver, and compares the file,
+# logical path and digest path each finds. Run it with beekeeper-studio/web's
+# gems, which include jekyll-assets:
+#
+#   cd $BEEKEEPER_WEB && mise exec -- bundle exec ruby /path/to/jekyll-magik/bench/resolver
+#
+# Exits 1 if anything differs.
+
+require "fileutils"
+require "tmpdir"
+require "jekyll"
+require "jekyll-assets"
+require_relative "../lib/jekyll/magik/core"
+
+FILES = %w(
+  _assets/img/a.jpeg _assets/img/b.tiff _assets/img/c.m4v _assets/img/d.jpg
+  _assets/img/home/e.png _assets/img/home/e.jpg _assets/img/home/e.svg
+  _assets/img/blog/q3/chart.png _assets/img/blog/q3/chart.gif
+  _assets/img/f.jpeg _assets/img/f.jpg _assets/img/g.min.png _assets/img/v1.0/h.png
+  _assets/img/release-1.0.png _assets/img/dir/index.png _assets/img/dir.png
+  _assets/img/.hidden.png _assets/img/#temp.png# _assets/img/backup.png~
+  _assets/img/both.png _assets/both.png _assets/fonts/x.woff2
+  _assets/img/odd.psd assets/images/legacy.png img/root.png _assets/images/later.png
+  custom/first.png custom/img/z.png _assets/img/z.png _assets/videos/clip.mp4
+).freeze
+
+NAMES = %w(
+  d.jpg img/d.jpg d.jpeg a.jpg a.jpeg b.tif c.mp4 f.jpg f.jpeg f home/e home/e.png home/e.svg img/home/e
+  blog/q3/chart img/blog/q3/chart release-1.0 g.min g.min.png v1.0/h dir dir/index dir/index.png
+  .hidden.png backup x.woff2 both.png img/both.png legacy.png root.png later.png z.png img/z.png first.png
+  clip.mp4 videos/clip.mp4 clip nope.png img/nope odd home/sub.png
+).freeze
+
+SOURCES = [
+  ["_assets"], %w(custom/img _assets), %w(_assets custom/img), %w(_assets/img custom/img), %w(custom)
+].freeze
+
+def sprockets(dir, sources, name)
+  config = Jekyll.configuration("source" => dir, "quiet" => true, "assets" => { "sources" => sources })
+  site = Jekyll::Site.new(config)
+  env = Jekyll::Assets::Env.new(site)
+  asset = env.find_asset(name)
+  asset && [asset.filename.delete_prefix("#{dir}/"), asset.logical_path, asset.digest_path]
+rescue StandardError => e
+  [:error, e.class.name]
+end
+
+def magik(dir, sources, name)
+  config = Jekyll::Magik::Config.new({ "source" => dir, "assets" => { "sources" => sources } })
+  source = Jekyll::Magik::Resolver.new(config).find(name)
+  source && [source.filename.delete_prefix("#{dir}/"), source.logical_path, source.digest_path]
+rescue Jekyll::Magik::Error => e
+  [:error, e.class.name]
+end
+
+Jekyll.logger.log_level = :error
+failures = 0
+checked = 0
+Dir.mktmpdir("magik-resolver-") do |dir|
+  FILES.each do |f|
+    FileUtils.mkdir_p(File.join(dir, File.dirname(f)))
+    File.write(File.join(dir, f), f)
+  end
+  FileUtils.mkdir_p(File.join(dir, "_assets/img/home/sub.png"))
+  Dir.chdir(dir) do # jekyll-assets only uses sources inside the working directory
+    SOURCES.each do |sources|
+      NAMES.each do |name|
+        theirs = sprockets(dir, sources, name)
+        ours = magik(dir, sources, name)
+        checked += 1
+        # Where sprockets finds nothing, jekyll-magik may also refuse a file
+        # it doesn't serve; anywhere else the results must be equal.
+        next if theirs == ours || (theirs.nil? && ours&.first == :error)
+
+        failures += 1
+        puts "#{sources.inspect} #{name}:\n  sprockets:    #{theirs.inspect}\n  jekyll-magik: #{ours.inspect}"
+      end
+    end
+  end
+end
+puts "#{checked} lookups, #{failures} differences"
+exit(failures.zero? ? 0 : 1)

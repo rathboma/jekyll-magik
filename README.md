@@ -5,10 +5,14 @@ the image side of [jekyll-assets](https://github.com/envygeeks/jekyll-assets).
 Your `{% asset %}` tags, including their `magick:` resize and crop arguments,
 keep working. The build stops spending minutes in ImageMagick.
 
-> **Status: planned, not implemented yet.** This README describes the design
-> in issues [#1](https://github.com/rathboma/jekyll-magik/issues/1) to
+> **Status: in progress.** Part 1
+> ([#1](https://github.com/rathboma/jekyll-magik/issues/1)) works: the tag,
+> `@path`, `@inline`, the filters and the Ruby API for files used as they are,
+> with jekyll-assets' exact URLs and markup. Resizing (`magick:`, issues #2 to
+> #4) doesn't yet: those tags raise "not supported". The rest of this README
+> describes the whole design in issues #1 to
 > [#6](https://github.com/rathboma/jekyll-magik/issues/6), and changes as each
-> part lands. Nothing below can be installed yet.
+> part lands. There's no release yet; install from git.
 
 ## Why
 
@@ -101,8 +105,11 @@ or without its extension.
 <img alt="Beekeeper Studio" loading="lazy" src="/assets/img/blog/default-<sha512>.jpg">
 ```
 
-HTML attributes are passed through in the order given: `alt`, `class`,
-`width`, `height`, `loading` and `title`. Liquid works anywhere in the tag:
+HTML attributes (`alt`, `class`, `width`, `height`, `loading`, `title`,
+`style`, ...) are written in the order given, then `src`, then `integrity`
+and `crossorigin` when `assets: defaults: img: integrity` is on: byte for
+byte what jekyll-assets wrote, escaping and quoting included. Liquid works in
+any value, and in the name:
 
 ```liquid
 {% asset {{ post.image.asset }} alt="{{ post.title | escape }}" %}
@@ -123,7 +130,9 @@ HTML attributes are passed through in the order given: `alt`, `class`,
 ```
 
 This writes the SVG's own markup into the page, with any attributes from the
-tag set on its root `<svg>` element.
+tag set on its root `<svg>` element. The file is kept as it is (attribute
+case such as `viewBox` included), except that its XML declaration and doctype
+are dropped. jekyll-assets re-serialized it and ignored the tag's attributes.
 
 ### Resizing: `magick:`
 
@@ -176,7 +185,10 @@ jekyll-assets:
 - **Asset types**: stylesheets and scripts (`.css`, `.scss`, `.js`). Use
   Jekyll's own Sass support and a JS bundler.
 - **Other modes**: `@data`, `@inline` on non-SVG files, and jekyll-assets'
-  `<video>`/`<audio>` builders (`@path` works for any file).
+  `<video>`/`<audio>` builders. `@path` works for images, video, audio and
+  fonts; an `<img>` for PNG, JPEG, WebP, GIF and SVG.
+- **Other arguments**: `@` flags other than `@path` and `@inline`, `!` flags,
+  an attribute without a value or given twice, and external URLs.
 - **Other features**: the `asset` filter, `responsive:` srcsets, `@pic`, the
   `{{ assets[...] }}` drop, `.liquid` assets, `cdn:`, `precompile` and gzip.
 - **Other resize syntax**: `vips:` arguments, and `magick:` keys or geometries
@@ -219,6 +231,8 @@ asset = site.magik.find!("blog/default.jpg")   # raises if it doesn't exist
 asset.url                                        # "/assets/img/blog/default-<sha512>.jpg"
 asset.width                                      # 1200
 asset.height                                     # 630
+site.magik.url("blog/default.jpg")               # the same URL
+site.magik.find("nope.png")                      # nil
 ```
 
 ```liquid
@@ -227,8 +241,9 @@ asset.height                                     # 630
 <img src="..." width="{{ size[0] }}" height="{{ size[1] }}">
 ```
 
-Looking an asset up this way also makes sure it's written to `_site`, even if
-no tag uses it.
+Looking an asset up with `find`, `find!`, `url` or `asset_url` also makes sure
+it's written to `_site`, even if no tag uses it. `asset_size` only reads the
+file's header.
 
 ## Caching in CI
 
@@ -265,3 +280,9 @@ their content, and old ones are removed after `gc.max_age_days`.
 
 See [CLAUDE.md](CLAUDE.md) for the architecture, the rules the code must keep
 and how to test against a real site.
+
+```bash
+bundle install
+bundle exec rake test
+bundle exec rubocop
+```

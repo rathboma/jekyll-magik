@@ -1,0 +1,10 @@
+/.bundle/
+/vendor/
+/pkg/
+/tmp/
+/coverage/
+Gemfile.lock
+*.gem
+.jekyll-cache/
+_site/
+.DS_Store

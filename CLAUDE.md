@@ -7,8 +7,9 @@ code.
 
 ## Status and the plan
 
-Nothing is implemented yet. The plan is six GitHub issues; read the one
-you're working on before starting:
+#1 is implemented: the core, for files used as they are. Resizing (`magick:`)
+raises "not supported" until #2 to #4. The plan is six GitHub issues; read the
+one you're working on before starting:
 
 | Issue | Part | Build order |
 |---|---|---|
@@ -177,8 +178,25 @@ encodes `format` conversions twice.
   them at it with `BEEKEEPER_WEB=/path/to/web`. Its gems come from `bundle
   install` there, and its Ruby from `mise install`
 
-Commands arrive with #1 and #5:
-- `bundle exec rake test`: unit, fixture-site and golden tests
+Commands:
+- `bundle exec rake test`: unit, fixture-site, parity and golden tests (all
+  run in CI, no beekeeper checkout needed). `bundle exec rubocop` lints
+- `bench/originals [BEEKEEPER_WEB]`: builds beekeeper with jekyll-assets and
+  `bench/plugins/originals_compare.rb`, which renders every asset tag with
+  jekyll-magik too, in the same Liquid context, and compares. It also compares
+  every original in the sprockets manifest, seo-assets' URLs and
+  `image_size`. About a minute when the site's `_site` has a jekyll-assets
+  build (its manifest keeps jekyll-assets' cache); exits 1 on a difference
+- `bench/resolver`, run with beekeeper's gems (`cd $BEEKEEPER_WEB && mise exec
+  -- bundle exec ruby .../bench/resolver`): tricky names through sprockets and
+  through the Resolver
+- `script/extract-tags BEEKEEPER_WEB > test/fixtures/beekeeper-tags.json`:
+  the tag corpus the parser parity test uses. Regenerate it when beekeeper's
+  templates change
+- `script/nokogiri-golden`, run with beekeeper's gems: the golden `<img>`
+  markup in `test/fixtures/nokogiri-img.json`
+
+Coming with #5:
 - `bench/run SITE_DIR`: build timings by scenario and configuration
 - `bench/parity A_SITE C_SITE`: HTML and image comparison of two builds
 - `bench/segments A_SITE C_SITE`: translated segment keys that changed
@@ -186,6 +204,35 @@ Commands arrive with #1 and #5:
 A full beekeeper build takes about 2 minutes cold on 4 vCPUs. Run it in the
 background and prefer the fixture site and manifest-based scripts for quick
 checks.
+
+## Code map and decisions (#1)
+
+- `lib/jekyll/magik/core.rb` loads the classes without registering anything;
+  `lib/jekyll/magik.rb` (`plugins: [jekyll-magik]`) registers the tag, the
+  filters, `site.magik` and the hooks, and refuses to run next to
+  jekyll-assets. The bench plugins load only `core` beside jekyll-assets
+- `Plan` parses a tag once, at Liquid parse time, with `Args` (a line-for-line
+  port of liquid-tag-parser). The structure (keys, flags) is checked there;
+  the error is raised when the tag renders, so it can name the page.
+  `Renderer` turns a Plan into markup
+- `Resolver` lists each directory at most once per build, on first use,
+  instead of globbing every load path up front: jekyll-assets' default load
+  paths include site-root directories (`img/`, `js/`, `images/`), which can
+  be big trees a site never asks for. Results are memoized per name
+- `Mime::EXTS` is sprockets' whole extension table, because it decides which
+  files an extensionless name can match. Only `Mime::PASSTHROUGH` types
+  (images, audio, video, fonts) are served: sprockets copies those byte for
+  byte, so their URLs are provably jekyll-assets'
+- HTML attributes: any valid name with a string or number value is written
+  as jekyll-assets wrote it (beekeeper uses `style` too). `src`, `integrity`
+  and `crossorigin` given in a tag behave as they did in jekyll-assets. Other
+  `@flags`, `!flags`, bare words, repeated keys and namespaced keys raise,
+  as do jekyll-assets' own keys (`data`, `pic`, `srcset:`, `vips:`, ...)
+- `Html` mirrors libxml2 2.13's attribute serialization (entities, quote
+  choice, URI escaping of `src`/`href`/`action`, dropped control
+  characters); the golden file comes from beekeeper's Nokogiri
+- `Svg` edits the root start tag in the file's own text instead of an XML
+  round trip, so the rest of the markup is kept byte for byte
 
 ## Conventions
 

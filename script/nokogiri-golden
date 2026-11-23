@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Writes golden <img> markup made the way jekyll-assets made it (Nokogiri's
+# HTML builder on an empty fragment, then to_html), for test/html_test.rb.
+# Run it with the Nokogiri the site was built with, beekeeper-studio/web's:
+#
+#   BUNDLE_GEMFILE=$BEEKEEPER_WEB/Gemfile bundle exec ruby script/nokogiri-golden \
+#     > test/fixtures/nokogiri-img.json
+
+require "json"
+require "nokogiri"
+
+def build(attributes)
+  doc = Nokogiri::HTML.fragment("") do |c|
+    c.options = Nokogiri::XML::ParseOptions::NONET | Nokogiri::XML::ParseOptions::NOENT
+  end
+  Nokogiri::HTML::Builder.with(doc) { |html| html.img(attributes) }
+  doc.to_html
+end
+
+cases = []
+add = ->(attributes) { cases << { "attributes" => attributes.to_a, "html" => build(attributes) } }
+
+# Every ASCII character but NUL, in a plain attribute and in each URI one.
+(1..127).each do |c|
+  %w(alt src href action SRC title).each { |name| add.call(name => "x#{c.chr}y") }
+end
+
+values = [
+  "", " ", "plain", "a & b", "a &amp; b", "&lt;", "&#39;", "&#x27;", "&copy;", "&foo", "&", "&{x}", "&&",
+  "\"q\"", "it's", "both \" and '", "\"'\"", "'\"'", "<b>", "a > b", "line\nbreak", "tab\there", "cr\rhere",
+  "é ü", " nbsp", " ", "﻿", "�", "\u{1f600}", "\u0085", "{{x}}", "%20", "%zz", " sp ",
+  "  leading", "\t\n\r leading", "trailing  ", "/assets/img/a b-é.png", "/assets/img/a.png?x=1&y=<2>",
+  "javascript:alert('x')", "mailto:a@b.c", "#frag", "a\\b", "`~!@#$%^*()_+-={}[]|;:,./?",
+  "\u0001\u0002\u001f mixed \u007f", "Tom & Jerry's \"show\"", "HOME &amp; \"WELCOME\""
+]
+values.each do |v|
+  %w(alt src href class data-x name).each { |name| add.call(name => v) }
+end
+
+# Several attributes, in order, with the kinds of values the tag passes.
+add.call("alt" => "A", "class" => "c", "width" => 300, "height" => 1.5, "src" => "/assets/a.png",
+         "integrity" => "sha512-abc+/=", "crossorigin" => "anonymous")
+add.call("title" => "T", "loading" => "lazy", "style" => "width: 100%; height: auto;", "src" => "/a.png")
+add.call({})
+
+puts JSON.pretty_generate(
+  "nokogiri" => Nokogiri::VERSION,
+  "libxml2" => Nokogiri::VERSION_INFO.dig("libxml", "loaded"),
+  "cases" => cases
+)
