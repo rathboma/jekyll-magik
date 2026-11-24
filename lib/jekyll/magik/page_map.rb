@@ -81,21 +81,25 @@ module Jekyll
       # has (its source hasn't changed). Failing to make it fails the build,
       # as it would in a tag.
       def rederive(page, path, logical_path, canonical)
-        source = begin
-          lookup(logical_path)
-        rescue Error
-          nil
-        end
-        transform = Transform.from_h(JSON.parse(canonical))
-        return false unless source && transform && registry.path_for(source, transform) == path
+        return false unless same_path?(path, logical_path, canonical)
 
-        derive(source, transform)
+        derive(lookup(logical_path), Transform.from_h(JSON.parse(canonical)))
         true
-      rescue JSON::ParserError
-        false
       rescue Error => e
+        relative = page.delete_prefix(File.join(site.source, ""))
         raise e.class,
-              "#{e.message} (remaking an image of #{page}, which this incremental build didn't render)"
+              "#{e.message} (remaking an image of #{relative}, which this incremental build didn't render)"
+      end
+
+      # Whether the source and transform recorded for a derivative still
+      # give its path: else the source changed (or isn't there), and the
+      # skipped page's URL can't be made again.
+      def same_path?(path, logical_path, canonical)
+        source = lookup(logical_path)
+        transform = Transform.from_h(JSON.parse(canonical))
+        source && transform ? registry.path_for(source, transform) == path : false
+      rescue Error, JSON::ParserError
+        false
       end
     end
   end

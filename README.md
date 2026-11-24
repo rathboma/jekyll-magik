@@ -173,8 +173,8 @@ A resized image's URL is
   for each width in a srcset.
 - The **content key** (64 hex) comes from the source's bytes, the arguments,
   the output format, the quality setting the output falls back on
-  (`jpeg_quality` or `webp_quality`, when the tag gives no `quality`) and
-  `PIPELINE_VERSION`, a number bumped when jekyll-magik's output for the same
+  (`jpeg_quality` or `webp_quality`, when the tag gives no `quality`), the
+  EXIF rotation applied (below) and `PIPELINE_VERSION`, a number bumped when jekyll-magik's output for the same
   arguments should change. The libvips version isn't part of it, so upgrading
   libvips renames nothing.
 
@@ -190,7 +190,8 @@ These are deliberate:
   profile is stripped. ImageMagick's `-strip` drops the profile unconverted,
   which washes the colours out.
 - **Orientation**: JPEGs are rotated according to their EXIF orientation
-  first.
+  first (an orientation outside 1 to 8 is ignored, as browsers ignore it).
+  Other formats are left as they are stored, as ImageMagick leaves them.
 - **JPEG quality**: ImageMagick reuses the source's quality, so a q100 source
   makes q100 thumbnails. jekyll-magik uses `magik.jpeg_quality` (82) unless the
   tag gives `quality`.

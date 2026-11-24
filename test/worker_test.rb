@@ -137,8 +137,34 @@ class WorkerTest < Minitest::Test
     processor&.stop
   end
 
-  # Dead well before the next job (here, even reaped by someone else), it's
-  # found before the job is sent: the job goes to a new worker, once.
+  # Dead well before the next job, it's found before the job is sent: the
+  # job goes to a new worker, once. (A worker killed by the OOM killer during
+  # `jekyll serve` is such a zombie.)
+  def test_a_worker_that_died_while_idle_is_reaped_before_the_next_job
+    processor = Jekyll::Magik::Processor.new
+    processor.run("id" => "a", "source" => "/nope.png")
+    dead = processor.pid
+    stat = "/proc/#{dead}/stat"
+    skip "needs /proc to see the worker exit" unless File.exist?(stat)
+    Process.kill(:KILL, dead)
+    # A zombie whose other threads (Ruby's, libvips') are still exiting
+    # can't be reaped yet: wait for them too.
+    sleep(0.01) until File.read(stat).split(") ").last.start_with?("Z") &&
+                      Dir.children("/proc/#{dead}/task").size <= 1
+    sent = 0
+    exchange = processor.method(:exchange)
+    processor.define_singleton_method(:exchange) do |job|
+      sent += 1
+      exchange.call(job)
+    end
+    assert_equal false, processor.run("id" => "b", "source" => "/nope.png")["ok"]
+    assert_equal 1, sent
+    refute_equal dead, processor.pid
+  ensure
+    processor&.stop
+  end
+
+  # Even reaped by someone else, it's found before the next job.
   def test_a_worker_that_died_while_idle_is_found_before_the_next_job
     processor = Jekyll::Magik::Processor.new
     processor.run("id" => "a", "source" => "/nope.png")

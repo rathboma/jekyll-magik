@@ -16,6 +16,13 @@ module Jekyll
     # lives for one build. With a memo (the Store), they are read from the
     # file only when it changed since a build read them last.
     class Source
+      # What a memo entry's size and orientation were read with. A new
+      # FastImage, or a change to read_header, may read a file differently
+      # (orientation decides rotation and is part of a derivative's content
+      # key), so entries from another reader are read again: a warm cache
+      # and a cold one must agree.
+      HEADER_READER = "1/fastimage-#{FastImage::VERSION}".freeze
+
       attr_reader :filename, :logical_path, :content_type, :config, :memo
 
       def initialize(filename:, logical_path:, content_type:, config:, memo: nil)
@@ -123,7 +130,11 @@ module Jekyll
       def header
         @header ||= begin
           info = memo&.source_info(filename, stat)
-          info&.key?("orientation") ? info.values_at("width", "height", "orientation").freeze : read_header
+          if info && info["header"] == HEADER_READER
+            info.values_at("width", "height", "orientation").freeze
+          else
+            read_header
+          end
         end
       end
 
@@ -137,8 +148,9 @@ module Jekyll
           width, height = height, width if orientation >= 5
           orientation = 1
         end
-        memo&.remember_source(filename, stat, "width" => width, "height" => height,
-                                              "orientation" => orientation, "type" => image.type.to_s)
+        memo&.remember_source(filename, stat,
+                              "width" => width, "height" => height, "orientation" => orientation,
+                              "type" => image.type.to_s, "header" => HEADER_READER)
         [width, height, orientation].freeze
       rescue FastImage::FastImageException => e
         raise Error,

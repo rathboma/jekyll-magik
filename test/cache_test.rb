@@ -318,6 +318,59 @@ class CacheTest < Minitest::Test
     refute File.exist?(stale), "the page map wasn't complete after remaking the image"
   end
 
+  # A remade image must get the URL the skipped page has: if its source or
+  # settings now give another, nothing is made and every file is kept.
+  def test_an_image_that_would_get_another_url_isnt_remade
+    _, dir = build(config: { "incremental" => true })
+    pages = File.join(dir, CACHE, "pages.json")
+    data = JSON.parse(File.read(pages))
+    key = File.join(dir, "resized.html")
+    poster = data[key].find { |entry| entry[1].start_with?("img/photo-") }
+    poster[1] = poster[1].sub(/\h{64}/, "f" * 64)
+    File.write(pages, JSON.generate(data))
+    stale = File.join(dir, "_site/assets/img/stale-#{"a" * 10}-#{"b" * 64}.png")
+    File.write(stale, "x")
+
+    site = rebuild(dir, "incremental" => true)
+    assert_equal 0, counts(site)[:processed]
+    assert File.exist?(stale), "the build didn't fall back to keeping every file"
+  end
+
+  class FailingProcessor
+    def run(_job) = { "ok" => false, "error" => "boom" }
+  end
+
+  def test_failing_to_remake_an_image_of_a_skipped_page_fails_the_build
+    _, dir = build(config: { "incremental" => true })
+    url = element(read_output(dir, "resized.html"), "poster")
+    File.unlink(object_for(dir, url))
+    site = site_for(dir, "incremental" => true)
+    site.magik.processor = FailingProcessor.new
+    error = assert_raises(Jekyll::Magik::Error) { site.process }
+    assert_match(/can't resize img\/photo\.jpg .*boom/, error.message)
+    assert_includes error.message, "(remaking an image of resized.html, which this incremental build didn't render)"
+  end
+
+  # The memo's sizes are used only if they were read the way this version
+  # reads them (the same read_header and FastImage).
+  def test_memo_entries_from_another_header_reader_are_read_again
+    _, dir = build
+    sources = File.join(dir, CACHE, "sources.json")
+    logo = File.join(dir, "_assets/img/logo.png")
+    data = JSON.parse(File.read(sources))
+    data[logo]["width"] = 99
+    File.write(sources, JSON.generate(data))
+    site = site_for(dir)
+    site.reset
+    assert_equal [99, 8], site.magik.lookup("logo.png").dimensions, "the memo wasn't used"
+
+    data[logo]["header"] = "0/fastimage-0"
+    File.write(sources, JSON.generate(data))
+    site = site_for(dir)
+    site.reset
+    assert_equal [12, 8], site.magik.lookup("logo.png").dimensions
+  end
+
   # An EXIF orientation outside 1-8 isn't one: libvips and browsers show
   # the image as stored, whatever FastImage makes of it.
   def test_an_orientation_that_isnt_one_is_ignored

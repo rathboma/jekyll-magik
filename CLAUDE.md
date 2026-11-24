@@ -284,6 +284,11 @@ checks.
 - An EXIF orientation outside 1 to 8 counts as 1 (`Source#read_header`):
   libvips and browsers ignore it, but FastImage swaps the size of anything
   from 5 up
+- Source memo entries record what read their size and orientation
+  (`Source::HEADER_READER`: a version of `read_header` and FastImage's);
+  an entry from another reader is read again, so a warm cache and a cold one
+  agree on sizes, rotation and so content keys. Bump the `read_header`
+  version when it changes what it returns
 - `Pipeline` is the plain version: `thumbnail` with `size: :force` to the
   predicted size, `crop`, flatten alpha for JPEG, encode (JPEG Q +
   `optimize_coding`, WebP Q + `effort: 4`, PNG `compression: 6`), metadata
@@ -324,8 +329,8 @@ checks.
   page the regenerator skipped gets its recorded assets used again. A
   recorded object that is missing or damaged (`Store#intact?`) is made again
   from its logical path and transform (`Transform.from_h`), if its URL would
-  be the same (`Registry#path_for`, without processing); failing to make it
-  fails the build, as in a tag. If a skipped page has no record, a record is
+  be the same (`Registry#path_for`, which registers nothing); failing to make
+  it fails the build, as in a tag, naming the page. If a skipped page has no record, a record is
   malformed, or the URL would be another (the source changed), the build
   falls back to #1's keep-everything rule
   (`keep_on_incremental?`). Pages are keyed by their absolute source path,

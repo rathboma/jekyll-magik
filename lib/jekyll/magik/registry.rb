@@ -103,9 +103,14 @@ module Jekyll
         ref
       end
 
-      # The Reference's path, without making sure the image is in the Store.
+      # The path a Reference would have, registering nothing.
       def path_for(source, transform)
-        (@references[[source, transform]] ||= build(source, transform)).path
+        ref = @references[[source, transform]]
+        return ref.path if ref
+
+        ext = transform.output_format(source)
+        _, settings = output_settings(transform, ext, source)
+        path(source, transform, self.class.dkey(source.digest, transform, settings), ext)
       end
 
       def references
@@ -132,11 +137,14 @@ module Jekyll
           dkey: dkey, ext: ext, source: source, transform: transform, quality: quality,
           width: width, height: height
         )
-        tkey = self.class.tkey(source.logical_path, transform)
-        path = "#{source.name}-#{tkey}-#{dkey}.#{ext}"
+        path = path(source, transform, dkey, ext)
         Reference.new(derivative: derivative, logical_path: source.logical_path, transform: transform,
-                      tkey: tkey, path: path, url: config.url_for(path),
-                      dest_path: config.dest_path_for(path))
+                      tkey: self.class.tkey(source.logical_path, transform), path: path,
+                      url: config.url_for(path), dest_path: config.dest_path_for(path))
+      end
+
+      def path(source, transform, dkey, ext)
+        "#{source.name}-#{self.class.tkey(source.logical_path, transform)}-#{dkey}.#{ext}"
       end
 
       # The quality the output is encoded with, and the settings that go into
