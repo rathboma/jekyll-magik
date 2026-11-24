@@ -21,7 +21,10 @@ module Jekyll
       # (orientation decides rotation and is part of a derivative's content
       # key), so entries from another reader are read again: a warm cache
       # and a cold one must agree.
-      HEADER_READER = "1/fastimage-#{FastImage::VERSION}".freeze
+      # (FastImage::VERSION exists from 2.2.5; the gemspec allows 2.2.)
+      FASTIMAGE_VERSION = (defined?(FastImage::VERSION) && FastImage::VERSION) ||
+                          Gem.loaded_specs["fastimage"]&.version.to_s
+      HEADER_READER = "1/fastimage-#{FASTIMAGE_VERSION}".freeze
 
       attr_reader :filename, :logical_path, :content_type, :config, :memo
 

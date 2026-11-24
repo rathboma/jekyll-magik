@@ -332,7 +332,7 @@ class CacheTest < Minitest::Test
     File.write(stale, "x")
 
     site = rebuild(dir, "incremental" => true)
-    assert_equal 0, counts(site)[:processed]
+    assert_equal({ derivatives: 0, cached: 0, processed: 0 }, counts(site), "the image was looked up or made")
     assert File.exist?(stale), "the build didn't fall back to keeping every file"
   end
 

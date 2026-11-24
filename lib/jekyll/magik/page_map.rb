@@ -98,7 +98,7 @@ module Jekyll
         source = lookup(logical_path)
         transform = Transform.from_h(JSON.parse(canonical))
         source && transform ? registry.path_for(source, transform) == path : false
-      rescue Error, JSON::ParserError
+      rescue Error, JSON::ParserError, SystemCallError
         false
       end
     end
