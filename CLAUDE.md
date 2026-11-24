@@ -7,8 +7,11 @@ code.
 
 ## Status and the plan
 
-#1 is implemented: the core, for files used as they are. Resizing (`magick:`)
-raises "not supported" until #2 to #4. The plan is six GitHub issues; read the
+#1 and #2 are implemented: the core, for files used as they are, and the
+global cache with derivative keys and URLs. `magick:` tags work, with what #3
+and #4 will replace kept simple: one worker, waited for per image, running a
+plain libvips pipeline (see "Code map and decisions (#2)"). #5 isn't done yet,
+so there are no `bench/run` numbers. The plan is six GitHub issues; read the
 one you're working on before starting:
 
 | Issue | Part | Build order |
@@ -82,15 +85,16 @@ Components (names from the issues; `lib/jekyll/magik/`):
 - **`Args`**: a parser compatible with `liquid-tag-parser` 2.0.2, run at Liquid
   parse time. Only values containing `{{` or `{%` are rendered per call
 - **`Transform`**: the IR from the `magick:` front end. Canonical JSON of the
-  user's arguments, plus `output_size(w, h)` (pure Ruby)
-- **`Registry`**: per build, `dkey → Derivative`. Only the render thread
-  touches it
+  user's arguments, plus `output_size(w, h)` and `steps(w, h)` (pure Ruby)
+- **`Registry`**: per build, `dkey → Derivative`, and `[source, transform] →
+  Reference` (the URL). Only the render thread touches it
 - **`Store`**: objects, `index.json`, the source memo, the page → assets map,
   GC
-- **`Pool`** and the worker script: spawned processes and a JSON-lines
-  protocol over pipes
-- **`AssetFile`** (`< Jekyll::StaticFile`): registered on first use, written
-  at Jekyll's write phase
+- **`Processor`** (#4's `Pool`), `worker.rb` and `Pipeline`: a spawned
+  process, a JSON-lines protocol over pipes, and the libvips code it runs
+- **`AssetFile`** and **`DerivativeFile`** (`< Jekyll::StaticFile`):
+  registered on first use, written at Jekyll's write phase; `ManifestFile`
+  for `magik-manifest.json`
 - **`Api`** (`site.magik`) and the filters `asset_url` and `asset_size`
 
 ## Rules (don't break these)
@@ -112,7 +116,8 @@ Components (names from the issues; `lib/jekyll/magik/`):
 4. **Derivative URLs come from inputs, never from output bytes.**
    - `tkey = sha256(logical path ‖ canonical transform)[0,10]`, the stable stem
    - `dkey = sha256(source sha512 ‖ canonical transform ‖ output settings ‖ PIPELINE_VERSION)`, the 64-hex digest
-   - output settings: the `jpeg_quality`/`webp_quality` a transform actually falls back on
+   - output settings: the output format, the `jpeg_quality`/`webp_quality`
+     a transform actually falls back on, and the EXIF orientation applied
    - never part of either key: HTML attributes, argument order, page, build time, libvips version
 
    **Bump `PIPELINE_VERSION`** when the output of an existing transform should
@@ -142,7 +147,8 @@ Components (names from the issues; `lib/jekyll/magik/`):
    - every write goes to a temp file, then a rename
 10. **The cache is never cleared implicitly.** Not by a missing `_site`, a new
     Jekyll or a missing manifest. GC runs only on full builds (not
-    `serve`, `--incremental` or `--limit-posts`) and goes by last use.
+    `serve`, `--watch`, `--incremental` or `--limit-posts`) and goes by last
+    use.
 
 ## ImageMagick behaviour to mirror (and not)
 
@@ -156,7 +162,10 @@ Mirror:
 Intended differences, documented in the README:
 - convert non-sRGB profiles to sRGB before stripping (only when the profile
   isn't already sRGB)
-- autorotate by EXIF
+- autorotate by EXIF, exactly where FastImage (which sizes every URL) turns
+  the size upright: JPEGs, judged by content, not by extension. A PNG or
+  WebP with an EXIF orientation keeps its stored one, as ImageMagick leaves
+  it
 - `jpeg_quality` (82) instead of reusing the source's quality
 - flatten alpha onto white for JPEG
 - no `integrity` on derivatives by default
@@ -186,7 +195,11 @@ Commands:
   jekyll-magik too, in the same Liquid context, and compares. It also compares
   every original in the sprockets manifest, seo-assets' URLs and
   `image_size`. About a minute when the site's `_site` has a jekyll-assets
-  build (its manifest keeps jekyll-assets' cache); exits 1 on a difference
+  build (its manifest keeps jekyll-assets' cache); exits 1 on a difference.
+  With `MAGIK_COMPARE_DERIVATIVES=1` it processes every `magick:` tag too (in
+  `MAGIK_COMPARE_CACHE`, default a temp dir that later runs reuse), and
+  compares its `<img>` apart from `src` and `integrity`, and its pixel size
+  with jekyll-assets' ImageMagick output
 - `bench/resolver`, run with beekeeper's gems (`cd $BEEKEEPER_WEB && mise exec
   -- bundle exec ruby .../bench/resolver`): tricky names through sprockets and
   through the Resolver
@@ -238,15 +251,98 @@ checks.
   `img/only.png`, sprockets' index alias), and names sprockets takes as
   digested already (`-1a2b3c4.digested`) get no digest
 - Assets are marked used per build, by the tags that render. An incremental
-  build skips unchanged pages, so `CleanerMethods` (in `magik.rb`) stops
-  Jekyll's cleaner from deleting jekyll-magik's files in incremental builds,
-  as jekyll-assets kept its manifest's files. #2's persisted page → assets
-  map should replace this with the exact set
+  build skips unchanged pages; #2's page → assets map puts their assets back
+  (see below)
 - `AssetFile` treats a destination hardlinked to its source as stale, which
-  is right for originals. #4's cache objects are meant to be hardlinked and
-  skipped when the inode matches, so it needs a policy per kind of asset
+  is right for originals. `DerivativeFile` is the other policy: a
+  destination that is the object's inode is up to date
 - A tag checks its mode against the asset's type before marking it used, so
   a tag that raises writes nothing (and, with #4, starts no job)
+
+## Code map and decisions (#2)
+
+- `Transform` holds #3's front end too: the identity can't be defined
+  without parsing, and the acceptance tests need `magick:` tags that render.
+  It accepts exactly #3's scope table. `resize`/`crop` keep their order (it
+  changes the result); settings are sorted; `strip` is dropped from the
+  identity (always on). `steps` and `output_size` copy ImageMagick's
+  arithmetic (`ParseMetaGeometry`'s one scale factor rounded per side,
+  `GravityAdjustGeometry`'s integer halves, `CropImage`'s clamp), checked
+  against `mogrify` (the goldens in `transform_test.rb`). A crop entirely
+  outside the image raises instead of ImageMagick's 1x1
+- `Plan` parses static `magick:` args once; Liquid ones (`'{{n}}x'`) are
+  parsed per render and memoized per tag by their rendered values
+- `Registry.dkey` hashes `[PIPELINE_VERSION, sha512, canonical, settings]` as
+  JSON. The settings include the output format, which comes from the source's
+  extension when `format` isn't given, so a JPEG named `.png` can't share an
+  object with the same bytes named `.jpg`; and the EXIF orientation applied
+  (when it's more than 1), which comes from FastImage's reading of the file,
+  so a FastImage release that turned other types upright would rename their
+  derivatives rather than change the pixels behind their URLs. Equal content
+  under two logical paths shares one Derivative (one object) and gets two
+  References (URLs)
+- An EXIF orientation outside 1 to 8 counts as 1 (`Source#read_header`):
+  libvips and browsers ignore it, but FastImage swaps the size of anything
+  from 5 up
+- Source memo entries record what read their size and orientation
+  (`Source::HEADER_READER`: a version of `read_header` and FastImage's);
+  an entry from another reader is read again, so a warm cache and a cold one
+  agree on sizes, rotation and so content keys. Bump the `read_header`
+  version when it changes what it returns
+- `Pipeline` is the plain version: `thumbnail` with `size: :force` to the
+  predicted size, `crop`, flatten alpha for JPEG, encode (JPEG Q +
+  `optimize_coding`, WebP Q + `effort: 4`, PNG `compression: 6`), metadata
+  stripped. No colour conversion or palette PNGs yet: #3 adds them and bumps
+  `PIPELINE_VERSION`. Because `size: :force` would squash any image into the
+  predicted box, the worker first checks that libvips reads the source at
+  the size the parent predicted from (`source_width`/`source_height`, after
+  rotation, which follows FastImage's: `autorotate` is `Source#orientation >
+  1`; `thumbnail_image` never rotates, since a load already did), and the
+  parent checks every
+  reply's size and deletes an object of the wrong size. Loading `pipeline.rb`
+  turns off libvips' operation cache (`Vips.cache_set_max(0)`), in workers
+  and with `workers: 0`: it caches loads by file name, so a file changed
+  during `jekyll serve` would come back with its old pixels
+- `Processor` is one process-wide worker (`Processor.shared`), started on
+  the first miss and stopped `at_exit`; jobs carry absolute paths, so sites
+  can share it. The worker keeps its real stdout for the protocol and points
+  `$stdout` at stderr. Jobs carry the source's size and mtime from when it was
+  digested, and the worker refuses a file that changed. A worker found dead
+  before a job, or that fails a job it didn't just start for, is replaced and
+  the job retried once; one that can't start (no libvips) fails every later
+  job with the same error, without spawning again
+- `Store`: three JSON files beside `objects/` (`index.json`, `sources.json`,
+  `pages.json`), each merged on save under an `flock` on `v1/lock`, written
+  with temp + rename and sorted keys. Only index entries this process
+  checked against their objects override disk's. A hit needs the entry's
+  size, ext and dimensions to match the object; an object without an entry
+  is a hit if FastImage reads the expected size from it and it ends as its
+  format must (PNG `IEND`, JPEG `EOI`, the WebP RIFF length), since a cut
+  file keeps its header. GC also deletes index entries without objects and
+  `.tmp-*` files over an hour old; a worker whose object directory GC just
+  removed makes it again. Full builds prune this site's memo entries and
+  pages that the build didn't see, and anyone's whose file is gone
+- The page map (`Api#after_render`, at `:site, :post_render`, and
+  `page_map.rb`): every page
+  rendered this build records its assets (`["o", logical, path]` or `["d",
+  path, logical, canonical]`, even when empty); in an incremental build, every
+  page the regenerator skipped gets its recorded assets used again. A
+  recorded object that is missing or damaged (`Store#intact?`) is made again
+  from its logical path and transform (`Transform.from_h`), if its URL would
+  be the same (`Registry#path_for`, which registers nothing); failing to make
+  it fails the build, as in a tag, naming the page. If a skipped page has no record, a record is
+  malformed, or the URL would be another (the source changed), the build
+  falls back to #1's keep-everything rule
+  (`keep_on_incremental?`). Pages are keyed by their absolute source path,
+  the way the regenerator keys them
+- Tests never write into `test/fixtures/site`: `fixture_site` and tests that
+  build on the fixture itself use a temp `cache_dir` and
+  `disable_disk_cache`. `test/fixtures/site/resized.html` has the four kinds
+  of transform beekeeper uses, and a PNG
+- Tests never load libvips into the test process (the suite fails if one
+  does): it brings the system's libxml2, and Nokogiri's golden test then
+  skips or misbehaves depending on test order. Use `ruby_subprocess` (a
+  `workers: 0` build) and `pixels` (reading an image) from `test_helper.rb`
 
 ## Review every piece of work
 

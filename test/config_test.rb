@@ -89,8 +89,7 @@ class ConfigTest < Minitest::Test
     assert_equal [90, 60], [c.jpeg_quality, c.webp_quality]
     assert c.derivative_integrity
     assert c.manifest
-    assert_equal ["unknown option `magik: colour` in _config.yml",
-                  "`magik: manifest` isn't implemented yet, so no manifest is written"], c.warnings
+    assert_equal ["unknown option `magik: colour` in _config.yml"], c.warnings
     assert_nil config("magik" => { "gc" => false }).gc_max_age_days
     assert_nil config("magik" => { "gc" => { "max_age_days" => false } }).gc_max_age_days
     assert_nil config("magik" => { "cache_dir" => "/elsewhere" }).relative_cache_dir

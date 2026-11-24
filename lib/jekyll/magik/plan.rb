@@ -14,15 +14,21 @@ module Jekyll
     # The structure (keys, flags, namespaces) can't depend on Liquid, so it's
     # checked here, against what jekyll-magik supports. The error is kept and
     # raised when the tag renders, where the page is known.
+    #
+    # `magick:` arguments become a Transform: here when they have no Liquid,
+    # else on each render, memoized by their rendered values (a srcset's
+    # `magick:resize='{{n}}x'` renders a few widths, many times).
     class Plan
       LIQUID = /\{\{|\{%/
 
       # Flags that pick an output mode.
       MODES = %i(path inline).freeze
 
+      # Transforms kept per tag for rendered `magick:` values.
+      MAX_TRANSFORMS = 256
+
       # Keys jekyll-assets gives a meaning beyond an HTML attribute.
       RESERVED = {
-        magick: "resizing with `magick:` isn't supported yet",
         vips: "`vips:` arguments aren't supported (jekyll-magik reads the `magick:` syntax)",
         optim: "`optim:` arguments aren't supported",
         data: "`@data` (data URIs) isn't supported",
@@ -40,9 +46,26 @@ module Jekyll
         @args = Args.parse(markup)
         @dynamic = compile(@args)
         @mode = MODES.find { |m| @args[m] == true } || :img
+        @transforms = {}
         validate!
+        @transform = Transform.parse(@args[:magick]) if magick? && !dynamic_value?(@args[:magick])
       rescue Error => e
         @error = e
+      end
+
+      # Whether the tag has `magick:` arguments.
+      def magick?
+        @args.key?(:magick)
+      end
+
+      # The tag's Transform, or nil without `magick:`. args: render_args'.
+      def transform(args)
+        return nil unless magick?
+        return @transform if @transform
+
+        magick = args[:magick]
+        @transforms.clear if @transforms.size >= MAX_TRANSFORMS
+        @transforms[magick] ||= Transform.parse(magick)
       end
 
       def dynamic?
@@ -57,7 +80,7 @@ module Jekyll
       # The HTML attributes, [[name, value], ...] in tag order.
       def attributes(args)
         args.filter_map do |key, value|
-          [key, value] unless key == :argv1 || MODES.include?(key)
+          [key, value] unless key == :argv1 || key == :magick || MODES.include?(key)
         end
       end
 
@@ -112,11 +135,13 @@ module Jekyll
         if MODES.all? { |m| @args[m] == true }
           raise NotSupported, "`@path` and `@inline` can't be used together"
         end
+        raise NotSupported, "`@inline` can't be used with `magick:`" if magick? && @mode == :inline
 
         @args.each { |key, value| validate_key!(key, value) unless key == :argv1 }
       end
 
       def validate_key!(key, value)
+        return validate_magick!(value) if key == :magick
         raise NotSupported, RESERVED[key] if RESERVED.key?(key)
 
         case value
@@ -131,6 +156,14 @@ module Jekyll
         end
         raise NotSupported, "`#{key}=` with a value isn't supported" if MODES.include?(key)
         raise NotSupported, "`#{key}` isn't a valid HTML attribute name" unless Html.valid_name?(key)
+      end
+
+      def validate_magick!(value)
+        unless value.is_a?(Hash)
+          raise NotSupported, "`magick` arguments are namespaced: `magick:resize='600x'`, `@magick:strip`"
+        end
+
+        Transform.check!(value)
       end
     end
   end

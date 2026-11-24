@@ -11,6 +11,11 @@
 # _site, its sprockets manifest is copied over first so that jekyll-assets
 # keeps its cache (about 45s instead of about 2.5 minutes).
 #
+# With MAGIK_COMPARE_DERIVATIVES=1 (see the plugin), the build runs with an
+# overlay of the site's Gemfile that adds ruby-vips, which the worker process
+# loads: a site gets it in its bundle as jekyll-magik's dependency, but here
+# jekyll-magik is loaded with --plugins.
+#
 # Exits 1 if anything differs.
 
 set -euo pipefail
@@ -29,6 +34,16 @@ cd "$web"
 run=()
 if command -v mise > /dev/null 2>&1; then run=(mise exec --); fi
 
+if [ "${MAGIK_COMPARE_DERIVATIVES:-}" = 1 ]; then
+  overlay="$dest.gems"
+  mkdir -p "$overlay"
+  printf 'eval_gemfile %s\ngem "ruby-vips", "~> 2.2"\n' "'$web/Gemfile'" > "$overlay/Gemfile"
+  cp "$web/Gemfile.lock" "$overlay/"
+  if [ -f "$web/.ruby-version" ]; then cp "$web/.ruby-version" "$overlay/"; fi
+  BUNDLE_GEMFILE="$overlay/Gemfile" "${run[@]}" bundle install --quiet
+  export BUNDLE_GEMFILE="$overlay/Gemfile"
+fi
+
 start=$(date +%s)
 JEKYLL_ENV=production MAGIK_COMPARE_REPORT="$report" "${run[@]}" bundle exec jekyll build \
   --config _config.yml,_config_production.yml \
@@ -44,4 +59,4 @@ if grep -q -E '"[^"]*(DIFFERENT|OUTSIDE|MISSING|jekyll-magik raises)[^"]*": [1-9
   echo "differences found, see $report" >&2
   exit 1
 fi
-rm -rf "$dest"
+rm -rf "$dest" "$dest.gems"

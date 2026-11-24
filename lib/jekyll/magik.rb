@@ -16,9 +16,9 @@ module Jekyll
 
     # An incremental build doesn't render the pages it skips, so their tags
     # never mark their assets used, and Jekyll's cleaner would delete them
-    # while the pages that refer to them stay. Keep jekyll-magik's files in
-    # incremental builds, as jekyll-assets kept every file in its manifest.
-    # (#2's page → assets map makes this exact.)
+    # while the pages that refer to them stay. Api#after_render uses them
+    # again from the page map; where it can't, this keeps jekyll-magik's
+    # files, as jekyll-assets kept every file in its manifest.
     module CleanerMethods
       private
 
@@ -50,10 +50,11 @@ Liquid::Template.register_tag("asset", Jekyll::Magik::Tag)
 Liquid::Template.register_filter(Jekyll::Magik::Filters)
 
 # jekyll-assets may be required after jekyll-magik, so check again once every
-# plugin is loaded. Creating the API here also reads and checks the config.
+# plugin is loaded. Creating the API here also reads and checks the config,
+# and loads the cache, once per process.
 Jekyll::Hooks.register :site, :after_init do |site|
   Jekyll::Magik.check_conflict!
-  site.magik
+  site.magik.store
 end
 
 Jekyll::Hooks.register :site, :after_reset do |site|
@@ -62,4 +63,12 @@ end
 
 Jekyll::Hooks.register :site, :pre_render do |_site, payload|
   payload["assets"] ||= Jekyll::Magik::AssetsDrop.new
+end
+
+Jekyll::Hooks.register :site, :post_render do |site|
+  site.magik.after_render
+end
+
+Jekyll::Hooks.register :site, :post_write do |site|
+  site.magik.after_write
 end

@@ -1,0 +1,10 @@
+---
+title: Resized & "converted"
+widths: [4, 8, 12]
+---
+<p id="thumb">{% asset blog/default.jpg magick:resize='600x' magick:crop='600x300+0+0' magick:gravity='center' @magick:strip alt="{{ page.title }}" %}</p>
+<p id="srcset">{% for w in page.widths %}{% asset shot.webp magick:resize='{{w}}x' magick:quality='80' @magick:strip @path %} {% endfor %}</p>
+<p id="to-webp">{% asset logo.png magick:resize='24x' magick:format='webp' magick:quality='80' @magick:strip @path %}</p>
+<p id="poster">{% asset photo.jpg magick:resize='64x' @magick:strip @path %}</p>
+<p id="card">{% asset logo.png magick:resize='16x' magick:quality='80' magick:format='jpg' @magick:strip class="card" alt="Card" loading="lazy" %}</p>
+<p id="png">{% asset home/edit-schema.png magick:resize='8x' @magick:strip @path %}</p>

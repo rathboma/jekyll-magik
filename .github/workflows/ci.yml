@@ -22,8 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Not used by the tests yet: the image pipeline (#3) needs it. Timed so
-      # we can see whether caching the packages is worth it.
+      # The tests resize images in a worker process that loads libvips. Timed
+      # so we can see whether caching the packages is worth it.
       - name: Install libvips
         run: |
           start=$(date +%s)

@@ -13,15 +13,27 @@ module Jekyll
     #   /assets/<logical path minus ext>-<sha512 hex of the file>.<ext>
     #
     # The digest and the pixel size are read lazily and at most once: a Source
-    # lives for one build.
+    # lives for one build. With a memo (the Store), they are read from the
+    # file only when it changed since a build read them last.
     class Source
-      attr_reader :filename, :logical_path, :content_type, :config
+      # What a memo entry's size and orientation were read with. A new
+      # FastImage, or a change to read_header, may read a file differently
+      # (orientation decides rotation and is part of a derivative's content
+      # key), so entries from another reader are read again: a warm cache
+      # and a cold one must agree.
+      # (FastImage::VERSION exists from 2.2.5; the gemspec allows 2.2.)
+      FASTIMAGE_VERSION = (defined?(FastImage::VERSION) && FastImage::VERSION) ||
+                          Gem.loaded_specs["fastimage"]&.version.to_s
+      HEADER_READER = "1/fastimage-#{FASTIMAGE_VERSION}".freeze
 
-      def initialize(filename:, logical_path:, content_type:, config:)
+      attr_reader :filename, :logical_path, :content_type, :config, :memo
+
+      def initialize(filename:, logical_path:, content_type:, config:, memo: nil)
         @filename = filename
         @logical_path = logical_path
         @content_type = content_type
         @config = config
+        @memo = memo
       end
 
       def stat
@@ -41,7 +53,11 @@ module Jekyll
       def digest
         @digest ||= begin
           stat
-          Digest::SHA512.file(filename).hexdigest
+          memo&.source_info(filename, stat)&.fetch("sha512", nil) || begin
+            hex = Digest::SHA512.file(filename).hexdigest
+            memo&.remember_source(filename, stat, "sha512" => hex)
+            hex
+          end
         end
       end
 
@@ -85,14 +101,18 @@ module Jekyll
         content_type == Mime::SVG
       end
 
-      # [width, height] in pixels, from the file's header.
+      # [width, height] in pixels, from the file's header. A JPEG's are after
+      # its EXIF rotation.
       def dimensions
-        @dimensions ||= begin
-          FastImage.size(filename, raise_on_failure: true)
-        rescue FastImage::FastImageException => e
-          raise Error,
-                "can't read the size of #{logical_path} (#{filename}): #{e.class.name.split("::").last}"
-        end
+        header.first(2)
+      end
+
+      # The EXIF orientation FastImage applied to `dimensions` (1 when it
+      # applied none). FastImage reads it from the content, for JPEGs (and
+      # TIFFs) only, so a transform rotates exactly the images whose size it
+      # predicted upright.
+      def orientation
+        header[2]
       end
 
       def width
@@ -105,6 +125,39 @@ module Jekyll
 
       def inspect
         "#<#{self.class.name} #{logical_path}>"
+      end
+
+      private
+
+      # [width, height, orientation], from the memo or the file's header.
+      def header
+        @header ||= begin
+          info = memo&.source_info(filename, stat)
+          if info && info["header"] == HEADER_READER
+            info.values_at("width", "height", "orientation").freeze
+          else
+            read_header
+          end
+        end
+      end
+
+      def read_header
+        image = FastImage.new(filename, raise_on_failure: true)
+        width, height = image.size
+        orientation = image.orientation || 1
+        unless (1..8).cover?(orientation)
+          # Not an orientation: libvips and browsers show the image as
+          # stored, but FastImage swaps the size of anything from 5 up.
+          width, height = height, width if orientation >= 5
+          orientation = 1
+        end
+        memo&.remember_source(filename, stat,
+                              "width" => width, "height" => height, "orientation" => orientation,
+                              "type" => image.type.to_s, "header" => HEADER_READER)
+        [width, height, orientation].freeze
+      rescue FastImage::FastImageException => e
+        raise Error,
+              "can't read the size of #{logical_path} (#{filename}): #{e.class.name.split("::").last}"
       end
     end
   end

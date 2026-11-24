@@ -60,7 +60,10 @@ class TagTest < Minitest::Test
   end
 
   def test_integrity_off
-    site = site_for(FIXTURE, "destination" => Dir.mktmpdir,
+    tmp = Dir.mktmpdir
+    (@tmpdirs ||= []) << tmp
+    site = site_for(FIXTURE, "destination" => tmp, "disable_disk_cache" => true,
+                             "magik" => { "cache_dir" => File.join(tmp, "cache") },
                              "assets" => { "sources" => ["_assets"], "defaults" => { "img" => { "integrity" => false } } })
     assert_equal %(<img alt="a" src="#{logo_url}">), render(%({% asset logo.png alt="a" %}), site: site)
   end
@@ -142,7 +145,13 @@ class TagTest < Minitest::Test
       %({% asset logo.png !path %}) => "`!path` isn't supported",
       %({% asset logo.png lazy %}) => "`lazy` without a value isn't supported",
       %({% asset logo.png alt=a alt=b %}) => "`alt` given more than once isn't supported",
-      %({% asset logo.png magick:resize=10x %}) => "resizing with `magick:` isn't supported yet",
+      %({% asset logo.png magick:extent=10x10 %}) => "`magick:extent` isn't supported",
+      %({% asset logo.png magick:resize=10x10 %}) => "`magick:resize='10x10'` isn't supported",
+      %({% asset logo.png magick:resize='{{ page.nope }}' %}) => "`magick:resize=''` isn't supported",
+      %({% asset logo.png magick=10x %}) => "`magick` arguments are namespaced",
+      %({% asset hero.svg magick:resize=10x @inline %}) => "`@inline` can't be used with `magick:`",
+      %({% asset anim.gif magick:resize=10x %}) => "resizing image/gif files isn't supported",
+      %({% asset clip.mp4 magick:resize=10x @path %}) => "resizing video/mp4 files isn't supported",
       %({% asset logo.png vips:resize=10 %}) => "`vips:` arguments aren't supported",
       %({% asset logo.png srcset:width=10 %}) => "`srcset:` isn't supported",
       %({% asset logo.png responsive:automatic=true %}) => "`responsive:` isn't supported",
